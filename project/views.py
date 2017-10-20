@@ -5,7 +5,7 @@ from project.db_operations import get_all_authors_with_sections, get_author_by_i
 
 @app.route('/')
 def super_page():
-    return render_template('home.html')
+    return render_template('index.html')
 
 @app.route('/lol')
 def lol():
@@ -25,6 +25,10 @@ def show_author(author_id):
     author = jsonify(get_author_by_id(author_id))
     author.headers['Access-Control-Allow-Origin'] = '*'
     return author
+
+@app.route('/authors/add', methods=['GET', 'POST'])
+def add_author():
+    pass
 
 @app.route('/books')
 def books():

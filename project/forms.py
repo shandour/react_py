@@ -6,6 +6,10 @@ from flask_security.forms import RegisterForm
 
 from project.db_operations import check_if_author_exists
 
+from flask_wtf.csrf import CSRFProtect
+
+csrf = CSRFProtect()
+
 
 class TagField(Field):
     widget = TextInput()

@@ -39,7 +39,7 @@ def find_authors(name, surname=None, book_title=None):
 def get_book_by_id(id=None):
     """Returns a book by id or aborts with 404"""
     book = Book.query.get_or_404(id)
-    book =  dict(id=book.id, title=book.title, description=book.description, text=book.text, authors=[[a.name, a. surname] if a.surname else [a.name] for a in book.authors])
+    book =  dict(id=book.id, title=book.title, description=book.description, text=book.text, authors=[[a.name, a. surname, a.id] if a.surname else [a.name] for a in book.authors])
     return book
 
 

@@ -1,0 +1,59 @@
+import React from 'react'
+
+import {
+    PageHeader,
+    FormGroup,
+    FormControl,
+    ControlLabel,
+    HelpBlock
+} from 'react-bootstrap'
+
+
+function NameField (props) {
+    return (
+            <FormGroup>
+            <ControlLabel>Enter name</ControlLabel>
+            <FormControl
+        type="text"
+        placeholder="Enter name"
+        name="name"
+        value={props.value}
+        onChange={props.onChange}
+            />
+            </FormGroup>
+    );
+}
+
+
+class AuthorAddForm extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {author: {name:'', surname:'', description: ''}, books: {title: '', description: '', text: ''}};
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+    }
+
+    handleSubmit(e) {
+        e.preventDefault();
+    }
+
+    handleChange(e) {
+        //GLITCHES
+        this.setState({author: {name: e.target.value}});
+        console.log(this.state);
+    }
+
+    render () {
+        return(
+                <div>
+                <PageHeader>Contribute to our trove of literary magnificence</PageHeader>
+                <form method="POST" onSubmit={this.handleSubmit}>
+                <NameField value={this.state.author.name} onChange={this.handleChange}/>
+                
+                </form>
+                </div>
+        );
+    }
+}
+
+export {AuthorAddForm};

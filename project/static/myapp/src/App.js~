@@ -1,4 +1,5 @@
 import React from 'react'
+
 import {
   BrowserRouter as Router,
   Route,
@@ -8,7 +9,6 @@ import {
 
 import {
     Nav,
-    NavItem,
     Navbar,
     Grid,
     Row,
@@ -16,103 +16,29 @@ import {
     Panel
 } from 'react-bootstrap'
 
+import loremIpsum from 'lorem-ipsum'
+
+import {Author, Authors} from './Author.js'
+
+import {Book, Books} from './Book.js'
+
+
+const testOutPut = loremIpsum({count:200});
+
 const Home = () => (
   <div>
         <h2>Home</h2>
- 
-    
+        {testOutPut}
   </div>
 )
 
 const About = () => (
   <div>
-    <h2>About</h2>
+        <h2>About</h2>
+        {testOutPut}
   </div>
 )
 
-class Author extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {author: [], loaded: false}
-    }
-
-    componentWillMount() {
-        fetch(`http://127.0.0.1:5000/authors/show/${this.props.match.params.authorId}`).then(results=> {return results.json();}).then(data => { this.setState({author: data, loaded:true});})
-    }
-
-    render() {
-        let {loaded, author} = this.state
-        const title = author.name + " " + author.surname
-        return (
-            <div>
-                {loaded
-                 ? <Panel header={title}>
-                 {author.description}
-                 iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiisssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
-                 </Panel>
-                 : <h2>Loading...</h2>}
-            </div>
-        );
-    }
-}
-
-
-
-function authorLinks(authors) {
-    const letters = Object.keys(authors);
-    let elementsList = [];
-    console.log(this)
-    for (let l of letters) {
-        const letterList = authors[l].map((obj) => {
-            return(
-                    <li key={obj.id}>
-                    <Link to={`${this.props.match.url}/${obj.id}`}>
-                    {obj.surname}{obj.name}
-                </Link>
-                    </li>);
-        })
-        console.log(letterList)
-        const list = <div><h3>{l}</h3><ul>{letterList}</ul></div>;
-        elementsList.push(list);
-    }
-    return elementsList;
-}
-
-
-class Authors extends React.Component{
-   constructor(props) {
-        super(props);
-       this.state = {authors: [], loaded:false};
-    }
-
-    componentWillMount() {
-        fetch('http://127.0.0.1:5000/authors').then(results=> {return results.json();}).then(data => { this.setState({authors: data, loaded:true});})
-    }
-
-    render() {
-        let {loaded, authors} = this.state
-        if (loaded) {
-            var f = authorLinks.bind(this);
-            var e = f(authors);
-        }
-
-        return (
-                <div>
-                {e
-                 ? <div>
-                 {e}
-                 </div>
-                 :<h1>Loading...</h1>
-                }
-
-
-    <Route exact path={this.props.match.url} render={() => (
-      <h3>Please select a topic.</h3>
-    )}/>
-  </div>
-        );
-    };
-}
 
 const Random = () => (
   <div>
@@ -120,24 +46,13 @@ const Random = () => (
   </div>
 )
 
-const Book = ({ match }) => (
-  <div>
-    <h2>match.params.bookId</h2>
-  </div>
-)
-
-const Books = ({ match }) => {
-        <div>
-        </div>
-}
-
 const BasicExample = () => (
 
         <Router>
         <div>
         <header>
-        <Navbar>
-         <Navbar.Header>
+        <Navbar fixedTop>
+        <Navbar.Header>
         <Navbar.Brand>
         <NavLink to="/" >Home</NavLink>
         </Navbar.Brand>
@@ -151,12 +66,13 @@ const BasicExample = () => (
         </Navbar>
         </header>
 
-        
+
         <Grid fluid>
         <Row>
-        <Col md={6} mdOffset={3}>
+        <Col md={6} mdOffset={3} id='main-content'>
         <Route exact path="/" component={Home}/>
-        <Route path="/books" component={Books}/>
+        <Route exact path="/books" component={Books}/>
+        <Route path="/books/:bookId" component={Book}/>
         <Route exact path="/authors" component={Authors}/>
         <Route path="/authors/:authorId" component={Author}/>
         <Route path="/about" component={About}/>
@@ -164,7 +80,13 @@ const BasicExample = () => (
         </Col>
         </Row>
 
-    </Grid>
+        <Col md={6} mdOffset={3}>
+        <Panel footer= "&copy; The Alexander literateur group 2017 - ad infinitum">
+        </Panel>
+        </Col>
+
+        </Grid>
+
         </div>
         </Router>
 

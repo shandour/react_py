@@ -8,7 +8,8 @@ import {
 import {
     Panel,
     ListGroup,
-    ListGroupItem
+    ListGroupItem,
+    PageHeader
 } from 'react-bootstrap'
 
 
@@ -40,14 +41,30 @@ class Book extends React.Component {
     }
 
     render() {
-        let {loaded, book} = this.state
-        const title = book.title
+        let {loaded, book} = this.state;
+        if (loaded) {
+            var title = book.title;
+            var authors = book.authors.map(
+                (obj) => {
+                    const fullName = obj[1]? obj[1] + ' ' + obj[0]: obj[0];
+                    return <a href={`/authors/${obj[2]}`}>{fullName}; </a>
+                }
+            );
+        }
         return (
             <div>
                 {loaded
-                 ? <Panel header={title}>
+                 ?
+                 <div>
+                 <PageHeader>{title} <small>dedicated page</small></PageHeader>
+                 <h4 class="text-center">A book by {authors}</h4>
+                 <Panel header="Book info">
                  {book.description}
                  </Panel>
+                 <Panel header="Contents">
+                 {book.text}
+                 </Panel>
+                 </div>
                  : <h2>Loading...</h2>}
             </div>
         );
@@ -80,10 +97,6 @@ class Books extends React.Component{
                  :<h1>Loading...</h1>
                 }
 
-
-    <Route exact path={this.props.match.url} render={() => (
-      <h3>Please select a topic.</h3>
-    )}/>
   </div>
         );
     };

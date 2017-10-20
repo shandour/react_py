@@ -23,7 +23,7 @@ def get_all_authors_with_sections():
 def get_author_by_id(id=None):
     """Returns an author by id or aborts with 404"""
     author = Author.query.get_or_404(id)
-    author = dict(id=author.id, name=author.name, surname=author.surname, description=author.description)
+    author = dict(id=author.id, name=author.name, surname=author.surname, description=author.description, books=sorted([(b.id, b.title) for b in author.books]))
     return author
 
 
@@ -39,6 +39,7 @@ def find_authors(name, surname=None, book_title=None):
 def get_book_by_id(id=None):
     """Returns a book by id or aborts with 404"""
     book = Book.query.get_or_404(id)
+    book =  dict(id=book.id, title=book.title, description=book.description, text=book.text, authors=[[a.name, a. surname] if a.surname else [a.name] for a in book.authors])
     return book
 
 
@@ -51,7 +52,7 @@ def get_all_books_with_sections():
         first_letter = b.title[0].upper()
         if first_letter not in d:
             d[first_letter] = []
-        d[first_letter].append(b)
+        d[first_letter].append(dict(id=b.id, title=b.title, authors=[[a.name, a. surname] if a.surname else [a.name] for a in b.authors]))
     return d
 
 

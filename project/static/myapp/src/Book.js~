@@ -6,7 +6,9 @@ import {
 } from 'react-router-dom'
 
 import {
-    Panel
+    Panel,
+    ListGroup,
+    ListGroupItem
 } from 'react-bootstrap'
 
 
@@ -16,13 +18,11 @@ function bookLinks(books) {
     for (let l of letters) {
         const letterList = books[l].map((obj) => {
             return(
-                    <li key={obj.id}>
-                    <Link to={`${this.props.match.url}/${obj.id}`}>
+                    <ListGroupItem key={obj.id} href={`${this.props.match.url}/${obj.id}`}>
                     {obj.title}
-                </Link>
-                    </li>);
+                  </ListGroupItem>);
         })
-        const list = <div><h3>{l}</h3><ul>{letterList}</ul></div>;
+        const list = <ListGroup><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
         elementsList.push(list);
     }
     return elementsList;
@@ -68,7 +68,7 @@ class Books extends React.Component{
         let {loaded, books} = this.state
         if (loaded) {
             var f = bookLinks.bind(this);
-            var e = f(authors);
+            var e = f(books);
         }
 
         return (
@@ -88,3 +88,5 @@ class Books extends React.Component{
         );
     };
 }
+
+export {Book, Books}

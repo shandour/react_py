@@ -105,10 +105,6 @@ class Authors extends React.Component{
                  :<h1>Loading...</h1>
                 }
 
-
-                <Route exact path={this.props.match.url} render={() => (
-                        <h3>Please select a topic.</h3>
-                )}/>
                 </div>
         );
     };

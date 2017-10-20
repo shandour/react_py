@@ -19,9 +19,8 @@ def create_app(settings_module='project.settings'):
     security.init_app(app, datastore=user_datastore,
                       register_form=UpgradedRegisterForm)
 
-    @app.context_processor
-    def inject_nav():
-        return {'nav': nav}
+    from project.forms import csrf
+    csrf.init_app(app)
 
     with app.app_context():
         import project.views

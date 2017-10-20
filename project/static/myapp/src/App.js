@@ -22,6 +22,8 @@ import {Author, Authors} from './Author.js'
 
 import {Book, Books} from './Book.js'
 
+import {AuthorAddForm} from './AuthorAddForm.js'
+
 
 const testOutPut = loremIpsum({count:200});
 
@@ -71,11 +73,16 @@ const BasicExample = () => (
         <Row>
         <Col md={6} mdOffset={3} id='main-content'>
         <Route exact path="/" component={Home}/>
+        
         <Route exact path="/books" component={Books}/>
-        <Route path="/books/:bookId" component={Book}/>
+        <Route exact path="/books/:bookId([0-9]+)" component={Book}/>
+        
         <Route exact path="/authors" component={Authors}/>
-        <Route path="/authors/:authorId" component={Author}/>
+        <Route path="/authors/:authorId([0-9]+)" component={Author}/>
+        <Route exact path="/authors/add" component={AuthorAddForm}/>
+        
         <Route path="/about" component={About}/>
+        
         <Route path='/random' component={Random}/>
         </Col>
         </Row>
