@@ -1,44 +1,49 @@
-from flask import current_app as app, render_template, jsonify
+from flask import current_app as app, render_template, jsonify, request
 
-from project.db_operations import get_all_authors_with_sections, get_author_by_id, get_all_books_with_sections, get_book_by_id
+from project.forms import AddAuthorForm
+
+from project.db_operations import get_all_authors_with_sections, get_author_by_id, get_all_books_with_sections, get_book_by_id, add_author as add_one_author
 
 
-@app.route('/')
-def super_page():
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def super_page(path=None):
     return render_template('index.html')
 
 @app.route('/lol')
 def lol():
     resp = jsonify({'number' : 123})
-    resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
-@app.route('/authors')
+@app.route('/api/authors')
 def authors():
     authors = get_all_authors_with_sections()
     resp = jsonify(authors)
-    resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
-@app.route('/authors/show/<int:author_id>')
+@app.route('/api/authors/<int:author_id>')
 def show_author(author_id):
     author = jsonify(get_author_by_id(author_id))
-    author.headers['Access-Control-Allow-Origin'] = '*'
     return author
 
-@app.route('/authors/add', methods=['GET', 'POST'])
+@app.route('/api/authors/add', methods=['GET', 'POST'])
 def add_author():
-    pass
+    form = AddAuthorForm(request.form)
+ 
+    if request.method == "POST" and form.validate():
+        add_one_author(form)
+        return jsonify({'success': 'success'})
+    else:
+        errors = form.get_dict_errors()
+        return jsonify(errors)
 
-@app.route('/books')
+@app.route('/api/books')
 def books():
     books = get_all_books_with_sections()
     resp = jsonify(books)
-    resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
-@app.route('/books/show/<int:book_id>')
-def show_books(book_id):
+@app.route('/api/books/<int:book_id>')
+def show_book(book_id):
     book = jsonify(get_book_by_id(book_id))
-    book.headers['Access-Control-Allow-Origin'] = '*'
     return book
