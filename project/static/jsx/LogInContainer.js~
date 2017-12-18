@@ -1,0 +1,26 @@
+import React from 'react'
+
+import {
+    Route,
+    Link,
+    Redirect
+} from 'react-router-dom'
+
+
+class LogInContainer extends React.Component {
+    constructor(props){
+        super(props);
+    }
+    
+    componentDidMount() {
+        fetch('/api/is-logged-in').then(resp => {console.log(resp.status)})
+    }
+
+    render() {
+        return (
+            <div>{this.props.children}</div>
+        )
+    }
+}
+
+export default {LogInContainer}

@@ -1,0 +1,45 @@
+{% extends 'basic_layout.html' %}
+
+{% block body %}
+
+<p>
+  Why register? By becoming an member of the Alexander literateur group fanbase you gain awesome powers of adding your favourite books and authors to our book database, making it thereby even more endlessah.
+</p>
+
+<form method="POST" action="{{url_for('security.register')}}">
+    {{register_user_form.csrf_token}}
+    <div class="form-group {% if register_user_form.username.errors %}has-error{% endif %}">
+      {{register_user_form.username.label(class_="control-label")}}
+      {{register_user_form.username(class_="form-control", placeholder="Enter desired username...")}}
+      {% if register_user_form.username.errors %}
+      <span class="help-block">{{ ' '.join(register_user_form.username.errors) }}</span>
+      {% endif %}
+    </div>
+     <div class="form-group {% if register_user_form.email.errors %}has-error{% endif %}">
+      {{register_user_form.email.label(class_="control-label")}}
+      {{register_user_form.email(class_="form-control", placeholder="Enter email...")}}
+      {% if register_user_form.email.errors %}
+      <span class="help-block">{{ ' '.join(register_user_form.email.errors) }}</span>
+      {% endif %}
+     </div>
+      <div class="form-group {% if register_user_form.password.errors %}has-error{% endif %}">
+      {{register_user_form.password.label(class_="control-label")}}
+      {{register_user_form.password(class_="form-control", placeholder="Enter password...")}}
+      {% if register_user_form.password.errors %}
+      <span class="help-block">{{ ' '.join(register_user_form.password.errors) }}</span>
+      {% endif %}
+      {% if register_user_form.password_confirm %}
+      {{register_user_form.password_confirm.label(class_="control-label")}}
+      {{register_user_form.password_confirm(class_="form-control", placeholder="Confirm entered password...")}}
+      {% if register_user_form.password_confirm.errors %}
+      <span class="help-block">{{ ' '.join(register_user_form.password_confirm.errors) }}</span>
+      {% endif %}
+      {% endif %}
+      </div>
+      <div>
+        {{register_user_form.submit()}}
+      </div>
+</form>
+
+
+{% endblock body %}

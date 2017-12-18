@@ -19,8 +19,10 @@ function bookLinks(books) {
     for (let l of letters) {
         const letterList = books[l].map((obj) => {
             return(
-                    <ListGroupItem key={obj.id} href={`${this.props.match.url}/${obj.id}`}>
+                    <ListGroupItem key={obj.id}>
+                    <Link to={`books/${obj.id}`}>
                     {obj.title}
+                </Link>
                   </ListGroupItem>);
         })
         const list = <ListGroup><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
@@ -36,18 +38,19 @@ class Book extends React.Component {
         this.state = {book: [], loaded: false}
     }
 
-    componentWillMount() {
-        fetch(`http://127.0.0.1:5000/api/books/${this.props.match.params.bookId}`).then(results=> {return results.json();}).then(data => { this.setState({book: data, loaded:true});})
+    componentDidMount() {
+        fetch(`/api/books/${this.props.match.params.bookId}`).then(results=> {return results.json();}).then(data => { this.setState({book: data, loaded: true});})
     }
 
     render() {
         let {loaded, book} = this.state;
+        console.log(book);
         if (loaded) {
             var title = book.title;
             var authors = book.authors.map(
                 (obj) => {
                     const fullName = obj[1]? obj[1] + ' ' + obj[0]: obj[0];
-                    return <a href={`/authors/${obj[2]}`}>{fullName}; </a>
+                    return <Link to={`/authors/${obj[2]}`}>{fullName}; </Link>
                 }
             );
         }
@@ -89,7 +92,7 @@ class Books extends React.Component{
         
         return (
                 <div>
-                {sortedBooks
+                {sortedBooks.length > 0
                  ? <div>
                  {sortedBooks}
                  </div>

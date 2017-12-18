@@ -6,11 +6,27 @@ body {
 
 #main-content {
     box-shadow: 5px 5px 5px 5px lightgrey;
-    padding: 30px;
+    padding: 3em;
+    margin-top: 1.5em;
 }
 
-header {
-    padding-bottom: 55px;
+@media (max-width: 768px) {
+    #main-content {
+        box-shadow: 5px 5px 5px 5px lightgrey;
+        padding: 3em;
+        margin-top: 5em;
+    }
+}
+
+.dropdown-toggle {
+    border-left:4px solid rgb(180, 180, 180);
+    border-top: 2px solid rgb(180, 180, 180);   
+    border-right: 1px solid rgb(180, 180, 180);
+    border-bottom: 1px solid rgb(180, 180, 180);
+}
+
+.dropdown-menu li {
+    padding-left: 10px;
 }
 
 .panel-default {
@@ -35,6 +51,64 @@ header {
     width: 100px;
 }
 
-nav {
-    padding-bottom: 20px;
+#author-tags-errors {
+    color: red;
+}
+
+#comment-type-dropdown {
+    margin-left: 1em;
+}
+
+#sorting-menu-dropdown {
+    margin-right: 1em;
+}
+
+#sort-up {
+    float: right;
+    margin-left: 15px;
+}
+
+#sort-down {
+    float: right;
+}
+
+.delete-button {
+    float:right;
+}
+
+.comment {
+    background-color: #F9F5F5;
+}
+
+.comment-content {
+    margin: 20px;
+    padding: 1em;
+}
+
+.comment-topic {
+    margin-top: 10px;
+    padding-left: 10px;
+    border-style: dotted none none dotted;
+}
+
+.comment-info {
+    margin: 10px 10px 10px 0px;
+}
+
+.attitude-button {
+    margin-left: 20px;
+}
+
+.username {
+    color: blue;
+}
+
+.edit-impossible-warning {
+    margin-left: 5px;
+    color: red;
+}
+
+.well {
+    margin-left: 1em;
+    margin-right: 1em;
 }

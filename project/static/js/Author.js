@@ -43392,6 +43392,677 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.Code404Error = undefined;
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+var _reactRouterDom = require('react-router-dom');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var Code404Error = function Code404Error(_ref) {
+    var location = _ref.location;
+    return _react2.default.createElement(
+        'div',
+        null,
+        _react2.default.createElement(
+            'h1',
+            null,
+            _react2.default.createElement(
+                'strong',
+                null,
+                'Page not found'
+            )
+        ),
+        _react2.default.createElement(
+            'h3',
+            null,
+            'No match for your requested url: ',
+            _react2.default.createElement(
+                'code',
+                null,
+                location.pathname
+            )
+        ),
+        _react2.default.createElement(_reactBootstrap.Image, { src: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/Baphomet.png', responsive: true }),
+        _react2.default.createElement(
+            'h2',
+            null,
+            'There is no escape unless thou pledgest thy soul unto Lord Satan'
+        ),
+        _react2.default.createElement(
+            _reactRouterDom.Link,
+            { to: '/' },
+            'Hail Satan!'
+        )
+    );
+};
+
+exports.Code404Error = Code404Error;
+
+},{"react":318,"react-bootstrap":264,"react-router-dom":304}],326:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.Comments = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+function CustomField(props) {
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            'Enter ' + props.name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            type: 'text',
+            placeholder: 'Provide ' + props.name,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id,
+            componentClass: props.componentClass
+        })
+    );
+}
+
+var Comment = function (_React$Component) {
+    _inherits(Comment, _React$Component);
+
+    function Comment(props) {
+        _classCallCheck(this, Comment);
+
+        var _this = _possibleConstructorReturn(this, (Comment.__proto__ || Object.getPrototypeOf(Comment)).call(this, props));
+
+        var commentInfo = Object.assign({}, _this.props.commentInfo);
+        _this.state = {
+            commentInfo: commentInfo,
+            beingEdited: false,
+            errors: {
+                topic: [],
+                text: []
+            },
+            warning: null,
+            deleteWarning: false
+        };
+
+        _this.handleEdit = _this.handleEdit.bind(_this);
+        _this.handleEditSubmit = _this.handleEditSubmit.bind(_this);
+        _this.handleChange = _this.handleChange.bind(_this);
+        _this.reactToComment = _this.reactToComment.bind(_this);
+        _this.toggleDeleteAlert = _this.toggleDeleteAlert.bind(_this);
+        _this.handleAlertDismiss = _this.handleAlertDismiss.bind(_this);
+        _this.handleConfirmDelete = _this.handleConfirmDelete.bind(_this);
+        return _this;
+    }
+
+    _createClass(Comment, [{
+        key: 'handleEditSubmit',
+        value: function handleEditSubmit(e) {
+            var _this2 = this;
+
+            e.preventDefault();
+            var bodyObj = {};
+            bodyObj['topic'] = this.state.commentInfo.topic;
+            bodyObj['text'] = this.state.commentInfo.text;
+            bodyObj['csrf_token'] = window.csrf_token;
+            var myHeaders = new Headers();
+            myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+            var options = { method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin" };
+            var req = new Request('/api/edit-comment/' + this.props.entityType + '/' + this.state.commentInfo.id, options);
+            fetch(req).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                if (data['success']) {
+                    var commentInfo = Object.assign({}, _this2.state.commentInfo);
+                    commentInfo['topic'] = data['edited_comment']['topic'];
+                    commentInfo['text'] = data['edited_comment']['text'];
+                    commentInfo['edited'] = data['edited_comment']['edited'];
+                    _this2.setState({ commentInfo: commentInfo });
+                    _this2.setState({ beingEdited: false });
+                } else {
+                    _this2.setState({ errors: data['errors'] });
+                }
+            });
+        }
+    }, {
+        key: 'handleEdit',
+        value: function handleEdit(e) {
+            var _this3 = this;
+
+            if (!this.props.loggedIn) {
+                this.setState({ warning: 'Please log in and check if you have the right to edit this' });
+                return;
+            }
+            if (!this.state.beingEdited) {
+                var req = new Request('/api/can_user_edit/' + this.props.entityType + '/' + this.props.commentInfo.id, { credentials: "same-origin" });
+                fetch(req).then(function (resp) {
+                    if (resp.status == 200) {
+                        _this3.setState({ beingEdited: true });
+                        return;
+                    } else if (resp.status == 403) {
+                        _this3.setState({ warning: 'You don\'t have the right to edit this' });
+                    } else {
+                        _this3.setState({ warning: 'Action denied wiith error code ' + resp.status });
+                    }
+                });
+            } else {
+                this.setState({ beingEdited: false });
+                this.setState({ commentInfo: this.props.commentInfo });
+            }
+        }
+    }, {
+        key: 'handleChange',
+        value: function handleChange(e) {
+            var editField = e.target.id;
+            var commentInfo = Object.assign({}, this.state.commentInfo);
+            commentInfo[editField] = e.target.value;
+            this.setState({ commentInfo: commentInfo });
+        }
+    }, {
+        key: 'reactToComment',
+        value: function reactToComment(e) {
+            var _this4 = this;
+
+            if (!this.props.loggedIn) {
+                this.setState({ warning: 'Log in to react to comments' });
+                return;
+            } else {
+                var reaction = e.target.name;
+                var req = new Request('/api/comments/attitude/' + reaction + '/' + this.props.entityType + '/' + this.props.commentInfo.id, { credentials: 'same-origin' });
+                fetch(req).then(function (resp) {
+                    if (resp.ok) {
+                        return resp.json();
+                    }
+                    _this4.setState({ warning: 'Log in to react to comments' });
+                    resolve();
+                }).then(function (data) {
+                    var commentInfo = Object.assign({}, _this4.state.commentInfo);
+                    commentInfo['liked'] = data['liked'];
+                    commentInfo['disliked'] = data['disliked'];
+                    commentInfo['likes_count'] = data['likes_count'];
+                    _this4.setState({ commentInfo: commentInfo });
+                });
+            }
+        }
+    }, {
+        key: 'handleConfirmDelete',
+        value: function handleConfirmDelete(e) {
+            this.props.handleDeleteComment(e.target.id, e.target.name);
+        }
+    }, {
+        key: 'toggleDeleteAlert',
+        value: function toggleDeleteAlert(e) {
+            if (!this.props.loggedIn) {
+                this.setState({ warning: 'Log in to react to comments' });
+                return;
+            }
+            this.setState({ deleteWarning: true });
+        }
+    }, {
+        key: 'handleAlertDismiss',
+        value: function handleAlertDismiss(e) {
+            this.setState({ deleteWarning: false });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _state = this.state,
+                commentInfo = _state.commentInfo,
+                beingEdited = _state.beingEdited,
+                errors = _state.errors,
+                warning = _state.warning,
+                deleteWarning = _state.deleteWarning;
+
+            var topicState = typeof errors.topic !== 'undefined' && errors.topic.length > 0 ? 'error' : null;
+            var textState = typeof errors.text !== 'undefined' && errors.text.length > 0 ? 'error' : null;
+
+            var liked = this.state.commentInfo.liked ? 'primary' : 'default';
+            var disliked = this.state.commentInfo.disliked ? 'primary' : 'default';
+
+            if (deleteWarning) {
+                return _react2.default.createElement(
+                    _reactBootstrap.Alert,
+                    { bsStyle: 'danger', onDismiss: this.handleAlertDismiss },
+                    _react2.default.createElement(
+                        'h4',
+                        null,
+                        'Delete warning!'
+                    ),
+                    _react2.default.createElement(
+                        'p',
+                        null,
+                        'You are about to permanently delete a comment.'
+                    ),
+                    _react2.default.createElement(
+                        'p',
+                        null,
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { id: commentInfo.id, name: this.props.countInArray.toString(), bsStyle: 'danger', onClick: this.handleConfirmDelete },
+                            'Take this action'
+                        ),
+                        _react2.default.createElement(
+                            'span',
+                            null,
+                            ' or '
+                        ),
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { onClick: this.handleAlertDismiss },
+                            'Dismiss'
+                        )
+                    )
+                );
+            }
+
+            return _react2.default.createElement(
+                'div',
+                null,
+                _react2.default.createElement(
+                    'div',
+                    { 'class': 'comment-info' },
+                    'A comment by ',
+                    _react2.default.createElement(
+                        'span',
+                        { 'class': 'username' },
+                        this.props.username
+                    ),
+                    '. Created ',
+                    commentInfo.created_at,
+                    '.',
+                    commentInfo.edited ? _react2.default.createElement(
+                        'span',
+                        null,
+                        ' Edited: ',
+                        commentInfo.edited
+                    ) : null
+                ),
+                beingEdited ? _react2.default.createElement(
+                    'form',
+                    { name: 'edit-form', onSubmit: this.handleEditSubmit },
+                    _react2.default.createElement(CustomField, {
+                        id: 'topic',
+                        name: 'Topic',
+                        value: commentInfo.topic,
+                        onChange: this.handleChange,
+                        validationState: topicState
+                    }),
+                    _react2.default.createElement(
+                        _reactBootstrap.HelpBlock,
+                        null,
+                        typeof errors.topic !== 'undefined' && errors.topic.length > 0 && errors.topic.map(function (str) {
+                            return _react2.default.createElement(
+                                'span',
+                                null,
+                                str
+                            );
+                        })
+                    ),
+                    _react2.default.createElement(CustomField, {
+                        id: 'text',
+                        name: 'Content',
+                        value: commentInfo.text,
+                        onChange: this.handleChange,
+                        componentClass: 'textarea',
+                        validationState: textState
+                    }),
+                    _react2.default.createElement(
+                        _reactBootstrap.HelpBlock,
+                        null,
+                        typeof errors.text !== 'undefined' && errors.text.length > 0 && errors.text.map(function (str) {
+                            return _react2.default.createElement(
+                                'span',
+                                null,
+                                str
+                            );
+                        })
+                    ),
+                    _react2.default.createElement(
+                        _reactBootstrap.Button,
+                        { id: commentInfo.id, onClick: this.handleEdit },
+                        'Cancel edit'
+                    ),
+                    _react2.default.createElement(_reactBootstrap.FormControl, { type: 'submit', value: 'Save edited comment', name: 'comment-save-edit-button', id: commentInfo.id })
+                ) : _react2.default.createElement(
+                    'div',
+                    null,
+                    _react2.default.createElement(
+                        'span',
+                        { 'class': 'delete-button' },
+                        ' ',
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { name: 'delete-button', onClick: this.toggleDeleteAlert, disabled: this.props.deleteDisabled },
+                            _react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'glyphicon glyphicon-remove' })
+                        ),
+                        ' '
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        'Likes: ',
+                        _react2.default.createElement(
+                            _reactBootstrap.Badge,
+                            null,
+                            commentInfo.likes_count
+                        ),
+                        _react2.default.createElement(
+                            'span',
+                            { 'class': 'attitude-button' },
+                            _react2.default.createElement(
+                                _reactBootstrap.Button,
+                                { id: commentInfo.id, name: 'like', onClick: this.reactToComment, bsStyle: liked },
+                                _react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'glyphicon glyphicon-thumbs-up' })
+                            )
+                        ),
+                        _react2.default.createElement(
+                            'span',
+                            { 'class': 'attitude-button' },
+                            _react2.default.createElement(
+                                _reactBootstrap.Button,
+                                { id: commentInfo.id, name: 'dislike', onClick: this.reactToComment, bsStyle: disliked },
+                                _react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'glyphicon glyphicon-thumbs-down' })
+                            )
+                        )
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        { 'class': 'comment-topic' },
+                        _react2.default.createElement(
+                            'strong',
+                            null,
+                            'Topic'
+                        ),
+                        ': ',
+                        commentInfo.topic
+                    ),
+                    _react2.default.createElement(
+                        _reactBootstrap.Well,
+                        null,
+                        commentInfo.text
+                    ),
+                    _react2.default.createElement(
+                        _reactBootstrap.Button,
+                        { id: commentInfo.id, onClick: this.handleEdit },
+                        'Edit'
+                    ),
+                    _react2.default.createElement(
+                        'span',
+                        { 'class': 'edit-impossible-warning' },
+                        warning
+                    )
+                )
+            );
+        }
+    }]);
+
+    return Comment;
+}(_react2.default.Component);
+
+var Comments = function (_React$Component2) {
+    _inherits(Comments, _React$Component2);
+
+    function Comments(props) {
+        _classCallCheck(this, Comments);
+
+        var _this5 = _possibleConstructorReturn(this, (Comments.__proto__ || Object.getPrototypeOf(Comments)).call(this, props));
+
+        _this5.state = {
+            commentsArray: [],
+            isLoaded: false,
+            loggedIn: '',
+            warning: '',
+            addComment: {
+                topic: '',
+                text: ''
+            },
+            addCommentErrors: {}
+        };
+
+        _this5.handleChange = _this5.handleChange.bind(_this5);
+        _this5.handleAddSubmit = _this5.handleAddSubmit.bind(_this5);
+        _this5.handleDeleteComment = _this5.handleDeleteComment.bind(_this5);
+        return _this5;
+    }
+
+    _createClass(Comments, [{
+        key: 'componentDidMount',
+        value: function componentDidMount() {
+            var _this6 = this;
+
+            var req = new Request('/api/' + this.props.entityType + 's/' + this.props.entityId + '/comments', { credentials: "same-origin" });
+            fetch(req).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                _this6.setState({ commentsArray: data['comments'], loggedIn: data['authenticated'], isLoaded: true });
+            });
+        }
+    }, {
+        key: 'handleChange',
+        value: function handleChange(e) {
+            var addComment = this.state.addComment;
+            addComment[e.target.id] = e.target.value;
+            this.setState({ addComment: addComment });
+        }
+    }, {
+        key: 'handleAddSubmit',
+        value: function handleAddSubmit(e) {
+            var _this7 = this;
+
+            e.preventDefault();
+            var bodyObj = Object.assign({}, this.state.addComment);
+            bodyObj['csrf_token'] = window.csrf_token;
+            var myHeaders = new Headers();
+            myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+            var options = { method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin" };
+            var req = new Request('/api/' + this.props.entityType + 's/' + this.props.entityId + '/add-comment', options);
+            fetch(req).then(function (resp) {
+                if (resp.ok) {
+                    return resp.json();
+                } else if (resp.status == 403) {
+                    _this7.setState({ warning: 'You don\'t have the right to edit this' });
+                    resolve();
+                } else {
+                    _this7.setState({ warning: 'Action denied wiith error code ' + resp.status });
+                    resolve();
+                }
+            }).then(function (data) {
+                if (data['errors']) {
+                    _this7.setState({ addCommentErrors: data['errors'] });
+                    return;
+                }
+                if (data['success'] && data['new_comment']) {
+                    var newComment = data['new_comment'];
+                    var commentsArray = Array.from(_this7.state.commentsArray);
+                    commentsArray.push(newComment);
+                    _this7.setState({ commentsArray: commentsArray });
+                    _this7.setState({ addComment: { topic: '', text: '' } });
+                    return;
+                }
+            });
+        }
+    }, {
+        key: 'handleDeleteComment',
+        value: function handleDeleteComment(commentId, commentCount) {
+            var _this8 = this;
+
+            var req = new Request('/api/can_user_edit/' + this.props.entityType + '/' + commentId, { credentials: "same-origin" });
+            fetch(req).then(function (resp) {
+                if (resp.ok) {
+                    var _req = new Request('/api/delete-comment/' + _this8.props.entityType + '/' + commentId, { credentials: "same-origin" });
+                    return fetch(_req);
+                } else {
+                    resolve();
+                }
+            }).then(function (resp) {
+                if (resp.ok) {
+                    var commentsArray = Array.from(_this8.state.commentsArray);
+                    commentsArray.splice(commentCount, 1);
+                    _this8.setState({ commentsArray: commentsArray });
+                    return;
+                }
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _state2 = this.state,
+                commentsArray = _state2.commentsArray,
+                isLoaded = _state2.isLoaded,
+                addCommentErrors = _state2.addCommentErrors,
+                warning = _state2.warning,
+                addComment = _state2.addComment;
+
+            if (!isLoaded) {
+                return _react2.default.createElement(
+                    'h3',
+                    null,
+                    'Loading...'
+                );
+            } else {
+                var comments = [];
+                var count = 0;
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = commentsArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var c = _step.value;
+
+                        var commentInfo = {
+                            id: c.id,
+                            topic: c.topic,
+                            text: c.text,
+                            likes_count: c.likes_count,
+                            created_at: c.created_at,
+                            edited: c.edited,
+                            liked: c.liked,
+                            disliked: c.disliked
+                        };
+                        var username = c.username;
+                        var disabled = c.current_user_wrote ? false : true;
+                        comments.push(_react2.default.createElement(
+                            'div',
+                            { 'class': 'comment' },
+                            _react2.default.createElement(Comment, { key: commentInfo.id.toString(), commentInfo: commentInfo, username: username, handleDeleteComment: this.handleDeleteComment, loggedIn: this.state.loggedIn, entityType: this.props.entityType, countInArray: count, deleteDisabled: disabled })
+                        ));
+                        count++;
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator.return) {
+                            _iterator.return();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
+                }
+
+                var topicState = typeof addCommentErrors.topic !== 'undefined' ? 'error' : null;
+                var textState = typeof addCommentErrors.text !== 'undefined' ? 'error' : null;
+
+                return _react2.default.createElement(
+                    'div',
+                    null,
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        comments
+                    ),
+                    _react2.default.createElement('hr', null),
+                    _react2.default.createElement(
+                        'form',
+                        { name: 'add-form', onSubmit: this.handleAddSubmit },
+                        _react2.default.createElement(CustomField, {
+                            id: 'topic',
+                            name: 'Topic',
+                            onChange: this.handleChange,
+                            validationState: topicState,
+                            value: addComment.topic
+                        }),
+                        _react2.default.createElement(
+                            _reactBootstrap.HelpBlock,
+                            null,
+                            typeof addCommentErrors.topic !== 'undefined' && addCommentErrors.topic.map(function (str) {
+                                return _react2.default.createElement(
+                                    'span',
+                                    null,
+                                    str
+                                );
+                            })
+                        ),
+                        _react2.default.createElement(CustomField, {
+                            id: 'text',
+                            name: 'Content',
+                            onChange: this.handleChange,
+                            componentClass: 'textarea',
+                            validationState: textState,
+                            value: addComment.text
+                        }),
+                        _react2.default.createElement(
+                            _reactBootstrap.HelpBlock,
+                            null,
+                            typeof addCommentErrors.text !== 'undefined' && addCommentErrors.text.map(function (str) {
+                                return _react2.default.createElement(
+                                    'span',
+                                    null,
+                                    str
+                                );
+                            })
+                        ),
+                        _react2.default.createElement(_reactBootstrap.FormControl, { type: 'submit', value: 'Add new comment', name: 'comment-add-button' })
+                    ),
+                    warning && _react2.default.createElement(
+                        'span',
+                        { 'class': 'edit-impossible-warning' },
+                        warning
+                    )
+                );
+            }
+        }
+    }]);
+
+    return Comments;
+}(_react2.default.Component);
+
+exports.Comments = Comments;
+
+},{"react":318,"react-bootstrap":264}],327:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 exports.Authors = exports.Author = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -43403,6 +44074,10 @@ var _react2 = _interopRequireDefault(_react);
 var _reactRouterDom = require('react-router-dom');
 
 var _reactBootstrap = require('react-bootstrap');
+
+var _Code404Error = require('./Code404Error.js');
+
+var _Comments = require('./Comments.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -43489,7 +44164,11 @@ var Author = function (_React$Component) {
 
         var _this = _possibleConstructorReturn(this, (Author.__proto__ || Object.getPrototypeOf(Author)).call(this, props));
 
-        _this.state = { author: [], loaded: false };
+        _this.state = {
+            author: [],
+            isLoaded: false,
+            errorCode404: false
+        };
         return _this;
     }
 
@@ -43499,26 +44178,34 @@ var Author = function (_React$Component) {
             var _this2 = this;
 
             fetch('/api/authors/' + this.props.match.params.authorId).then(function (results) {
+                if (results.status == 404) {
+                    _this2.setState({ errorCode404: true });
+                }
                 return results.json();
             }).then(function (data) {
-                _this2.setState({ author: data, loaded: true });
+                _this2.setState({
+                    author: data,
+                    isLoaded: true
+                });
             });
         }
     }, {
         key: 'render',
         value: function render() {
             var _state = this.state,
-                loaded = _state.loaded,
-                author = _state.author;
+                isLoaded = _state.isLoaded,
+                author = _state.author,
+                errorCode404 = _state.errorCode404;
 
-            if (loaded) {
-                var fullName = author.name + " " + author.surname;
-                var books = authorBooks(author.books);
+            if (errorCode404) {
+                return _react2.default.createElement(_Code404Error.Code404Error, { location: location });
             }
-            return _react2.default.createElement(
-                'div',
-                null,
-                loaded ? _react2.default.createElement(
+
+            if (isLoaded) {
+                var fullName = author.surname ? author.name + " " + author.surname : author.name;
+                var books = authorBooks(author.books);
+
+                return _react2.default.createElement(
                     'div',
                     null,
                     _react2.default.createElement(
@@ -43529,6 +44216,16 @@ var Author = function (_React$Component) {
                             'small',
                             null,
                             '\u2018s personal page'
+                        )
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        'Spotted an error? Want to add smth? ',
+                        _react2.default.createElement(
+                            _reactRouterDom.Link,
+                            { to: '/authors/' + this.props.match.params.authorId + '/edit' },
+                            ' Please push here!'
                         )
                     ),
                     _react2.default.createElement(
@@ -43544,13 +44241,26 @@ var Author = function (_React$Component) {
                             null,
                             books
                         )
+                    ),
+                    _react2.default.createElement('hr', null),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        _react2.default.createElement(
+                            'h3',
+                            { 'class': 'text-center' },
+                            'The comment section'
+                        ),
+                        _react2.default.createElement(_Comments.Comments, { entityType: 'author', entityId: this.state.author.id })
                     )
-                ) : _react2.default.createElement(
-                    'h2',
+                );
+            } else {
+                return _react2.default.createElement(
+                    'h3',
                     null,
                     'Loading...'
-                )
-            );
+                );
+            }
         }
     }]);
 
@@ -43565,7 +44275,7 @@ var Authors = function (_React$Component2) {
 
         var _this3 = _possibleConstructorReturn(this, (Authors.__proto__ || Object.getPrototypeOf(Authors)).call(this, props));
 
-        _this3.state = { authors: [], loaded: false };
+        _this3.state = { authors: [], isLoaded: false };
         return _this3;
     }
 
@@ -43577,49 +44287,54 @@ var Authors = function (_React$Component2) {
             fetch('/api/authors').then(function (results) {
                 return results.json();
             }).then(function (data) {
-                _this4.setState({ authors: data, loaded: true });
+                _this4.setState({
+                    authors: data,
+                    isLoaded: true
+                });
             });
         }
     }, {
         key: 'render',
         value: function render() {
             var _state2 = this.state,
-                loaded = _state2.loaded,
+                isLoaded = _state2.isLoaded,
                 authors = _state2.authors;
 
-            if (loaded) {
+            if (isLoaded) {
                 var f = authorLinks.bind(this);
                 var e = f(authors);
-            }
 
-            return _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(
+                return _react2.default.createElement(
                     'div',
                     null,
-                    'Behold the glorious auctores magni, now not only not names upon the gravestones of paper, but beautifully zombyfied and served e-style!'
-                ),
-                _react2.default.createElement(
-                    'div',
-                    null,
-                    'Do you wish to make a contribution to our authors collection?  ',
                     _react2.default.createElement(
-                        _reactRouterDom.Link,
-                        { to: "/authors/add" },
-                        ' Please push here!'
+                        'div',
+                        null,
+                        'Behold the glorious auctores magni, now not only not names upon the gravestones of paper, but beautifully zombyfied and served e-style!'
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        'Do you wish to make a contribution to our authors collection?  ',
+                        _react2.default.createElement(
+                            _reactRouterDom.Link,
+                            { to: "/authors/add" },
+                            ' Please push here!'
+                        )
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        e
                     )
-                ),
-                e ? _react2.default.createElement(
-                    'div',
-                    null,
-                    e
-                ) : _react2.default.createElement(
-                    'h1',
+                );
+            } else {
+                return _react2.default.createElement(
+                    'h3',
                     null,
                     'Loading...'
-                )
-            );
+                );
+            }
         }
     }]);
 
@@ -43629,4 +44344,4 @@ var Authors = function (_React$Component2) {
 exports.Author = Author;
 exports.Authors = Authors;
 
-},{"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[325]);
+},{"./Code404Error.js":325,"./Comments.js":326,"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[327]);

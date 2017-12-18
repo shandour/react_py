@@ -1,7 +1,6 @@
 import React from 'react'
 
 import {
-    Route,
     Link
 } from 'react-router-dom'
 
@@ -11,6 +10,10 @@ import {
     ListGroupItem,
     PageHeader
 } from 'react-bootstrap'
+
+import {Code404Error} from './Code404Error.js'
+
+import {Comments} from './Comments.js'
 
 
 function bookLinks(books) {
@@ -35,42 +38,61 @@ function bookLinks(books) {
 class Book extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {book: [], loaded: false}
+        this.state = {
+            book: [],
+            isLoaded: false,
+            errorCode404: false
+        }
     }
 
     componentDidMount() {
-        fetch(`/api/books/${this.props.match.params.bookId}`).then(results=> {return results.json();}).then(data => { this.setState({book: data, loaded: true});})
+        fetch(`/api/books/${this.props.match.params.bookId}`).then(results => {
+            if (results.status == 404) {
+                this.setState({errorCode404: true});
+            }
+            return results.json();
+        }).then(data => {
+            this.setState({book: data, isLoaded: true});
+        });
     }
 
     render() {
-        let {loaded, book} = this.state;
-        console.log(book);
-        if (loaded) {
+        let {isLoaded, book, errorCode404} = this.state;
+        if (errorCode404) {
+            return (<Code404Error location={location}/>);
+        }
+        if (isLoaded) {
             var title = book.title;
             var authors = book.authors.map(
                 (obj) => {
-                    const fullName = obj[1]? obj[1] + ' ' + obj[0]: obj[0];
-                    return <Link to={`/authors/${obj[2]}`}>{fullName}; </Link>
+                    const fullName = obj.surname? obj.surname + ' ' + obj.name: obj.name;
+                    return <Link to={`/authors/${obj.id}`}>{fullName}; </Link>
                 }
             );
-        }
+
         return (
-            <div>
-                {loaded
-                 ?
-                 <div>
-                 <PageHeader>{title} <small>dedicated page</small></PageHeader>
-                 <h4 class="text-center">A book by {authors}</h4>
-                 <Panel header="Book info">
-                 {book.description}
-                 </Panel>
-                 <Panel header="Contents">
-                 {book.text}
-                 </Panel>
-                 </div>
-                 : <h2>Loading...</h2>}
-            </div>
+                <div>
+                <PageHeader>{title} <small>dedicated page</small></PageHeader>
+                <h4 class="text-center">A book by {authors}</h4>
+                <div>
+                Spotted an error? Want to add smth? <Link to={`/books/${this.props.match.params.bookId}/edit`}> Please push here!</Link>
+                </div>
+                <Panel header="Book info">
+                {book.description}
+                </Panel>
+                <Panel header="Contents">
+                {book.text}
+                </Panel>
+
+                <div>
+                <h3 class="text-center">The comment section</h3>
+                <Comments entityType='book' entityId={this.state.book.id}/>
+                </div>
+                </div>
         );
+        } else {
+            return <h3>Loading...</h3>;
+        }
     }
 }
 
@@ -81,17 +103,20 @@ class Books extends React.Component{
     }
 
     componentDidMount() {
-        fetch('/api/books').then(results=> {return results.json();}).then(data => { this.setState({books: data});})
+        fetch('/api/books').then(results=> results.json()).then(data => {
+            this.setState({books: data});
+        });
     }
 
     render() {
         var f = bookLinks.bind(this);
         var sortedBooks = f(this.state.books);
 
-        console.log(sortedBooks);
-        
         return (
                 <div>
+                <div>
+                Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  <Link to={"/books/add"}> Please push here, then!</Link>
+                </div>
                 {sortedBooks.length > 0
                  ? <div>
                  {sortedBooks}
@@ -99,7 +124,7 @@ class Books extends React.Component{
                  :<h1>Loading...</h1>
                 }
 
-  </div>
+            </div>
         );
     };
 }

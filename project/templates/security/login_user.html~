@@ -1,0 +1,43 @@
+<div>
+<form method="POST" action="{{url_for('security.login')}}">
+  {{login_user_form.csrf_token}}
+  <div class="form-group {% if login_user_form.email.errors %}has-error{% endif %}">
+    {{login_user_form.email.label(class_="control-label")}}
+    {{login_user_form.email(class_="form-control", placeholder="Enter your email...")}}
+    {% if login_user_form.email.errors %}
+    <span class="help-block">{{ ' '.join(login_user_form.email.errors) }}</span>
+    {% endif %}
+  </div>
+  <div class="form-group {% if login_user_form.password.errors %}has-error{% endif %}">
+    {{login_user_form.password.label(class_="control-label")}}
+    {{login_user_form.password(class_="form-control", placeholder="Enter your password...")}}
+    {% if login_user_form.password.errors %}
+    <span class="help-block">{{ ' '.join(login_user_form.password.errors) }}</span>
+    {% endif %}
+  </div>
+  <div class="form-group {% if login_user_form.remember.errors %}has-error{% endif %}">
+    {{login_user_form.remember(type="checkbox")}}
+       {{login_user_form.remember.label(class_="control-label")}}
+    {% if login_user_form.remember.errors %}
+    <span class="help-block">{{ ' '.join(login_user_form.remember.errors) }}</span>
+    {% endif %}
+  </div>
+  {{login_user_form.next}}
+  <div>
+    {{login_user_form.submit()}}
+  </div>
+</form>
+</div>
+
+<div style="margin-top: 2em">
+  <ul class="list-group">
+    <a href="{{url_for('security.forgot_password')}}" class="list-group-item active">
+      <h4 class="list-group-item-heading"> <span class="glyphicon glyphicon-king" aria-hidden="true"></span> Forgot the password?</h4>
+      <p class="list-group-item-text">  Despair not, we've got what you need!</p>
+    </a>
+    <a href="{{url_for('security.register')}}" class="list-group-item active">
+      <h4 class="list-group-item-heading"> <span class="glyphicon glyphicon-king" aria-hidden="true"></span>Never had one to begin with?</h4>
+      <p class="list-group-item-text"> Guess what? In that case, we've got what you need as well!</p>
+    </a>
+  </ul>
+</div>

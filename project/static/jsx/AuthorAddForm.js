@@ -89,12 +89,18 @@ class AuthorAddForm extends React.Component {
         this.handleChange = this.handleChange.bind(this);
         this.addBook = this.addBook.bind(this);
         this.removeBook = this.removeBook.bind(this);
-        this.state = {booksCounter: 0, author: {first_name: "", last_name: "", description: ""}, books: [], errors: {}};
+        this.state = {
+            booksCounter: 0,
+            author: {
+                first_name: "",
+                last_name: "",
+                description: ""
+            }, books: [],
+            errors: {}};
     }
 
     handleSubmit(e) {
         e.preventDefault();
-        console.log(this.state);
         let bodyObj = Object.assign({}, this.state.author);
         for (let obj of this.state.books) {
             let keys = Object.keys(obj);
@@ -105,8 +111,6 @@ class AuthorAddForm extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-       // myHeaders.append('Accept', 'application/json, application/xml, text/plain, text/html, *.*')
-    //    myHeaders.append('Referer', '/api/authors/add');
         let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
         let req = new Request('/api/authors/add', options);
         fetch(req).then(resp => resp.json()).then(data => {
@@ -138,6 +142,7 @@ class AuthorAddForm extends React.Component {
         });
     }
 
+//CHANGE: update state once at the end of all the stuff below; maybe, just copy the whole of this.state and tweak it, then set
     removeBook (e){
         let removeId = e.target.id;
         let books = this.state.books.slice();
@@ -182,6 +187,9 @@ class AuthorAddForm extends React.Component {
 
 
     render () {
+        if (!this.props.loggedIn) {
+            return(<Redirect to='/smooth-login'/>)
+        }
         const successStatus = this.state.errors.success ? true: false;
         let n = this.state.booksCounter;
         const booksField = getBookFields.bind(this)(n, this.state.books, this.state.errors.books);

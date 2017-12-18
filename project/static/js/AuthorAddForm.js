@@ -43503,7 +43503,14 @@ var AuthorAddForm = function (_React$Component) {
         _this.handleChange = _this.handleChange.bind(_this);
         _this.addBook = _this.addBook.bind(_this);
         _this.removeBook = _this.removeBook.bind(_this);
-        _this.state = { booksCounter: 0, author: { first_name: "", last_name: "", description: "" }, books: [], errors: {} };
+        _this.state = {
+            booksCounter: 0,
+            author: {
+                first_name: "",
+                last_name: "",
+                description: ""
+            }, books: [],
+            errors: {} };
         return _this;
     }
 
@@ -43513,7 +43520,6 @@ var AuthorAddForm = function (_React$Component) {
             var _this2 = this;
 
             e.preventDefault();
-            console.log(this.state);
             var bodyObj = Object.assign({}, this.state.author);
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
@@ -43567,8 +43573,6 @@ var AuthorAddForm = function (_React$Component) {
             bodyObj['csrf_token'] = window.csrf_token;
             var myHeaders = new Headers();
             myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-            // myHeaders.append('Accept', 'application/json, application/xml, text/plain, text/html, *.*')
-            //    myHeaders.append('Referer', '/api/authors/add');
             var options = { method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin" };
             var req = new Request('/api/authors/add', options);
             fetch(req).then(function (resp) {
@@ -43605,6 +43609,9 @@ var AuthorAddForm = function (_React$Component) {
                 return { booksCounter: prevState.booksCounter + 1 };
             });
         }
+
+        //CHANGE: update state once at the end of all the stuff below; maybe, just copy the whole of this.state and tweak it, then set
+
     }, {
         key: 'removeBook',
         value: function removeBook(e) {
@@ -43650,6 +43657,9 @@ var AuthorAddForm = function (_React$Component) {
         value: function render() {
             var _this3 = this;
 
+            if (!this.props.loggedIn) {
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/smooth-login' });
+            }
             var successStatus = this.state.errors.success ? true : false;
             var n = this.state.booksCounter;
             var booksField = getBookFields.bind(this)(n, this.state.books, this.state.errors.books);

@@ -1,0 +1,118 @@
+import React from 'react';
+
+import {Link} from 'react-router-dom'
+
+import {
+    PageHeader,
+    Panel,
+    DropdownButton,
+    MenuItem,
+    Button,
+    Glyphicon,
+    ListGroup,
+    ListGroupItem
+} from 'react-bootstrap'
+
+
+class UserCabinet extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            user: {},
+            loaded: false,
+            warning: '',
+            commentsDisplay: {
+                commentsType: 'all',
+                sortOption: 'most-popular'
+            }
+        };
+        this.handlePasswordChange = this.handlePasswordChange.bind(this);
+        this.selectDropdown = this.selectDropdown.bind(this);
+    }
+
+    componentDidMount() {
+        let req = new Request('/api/get-current-user', {credentials: "same-origin"});
+        fetch(req).then(resp => {
+            if (!resp.ok) {
+                this.setState({warning: 'You have no permission to view this.'});
+            } else {
+                return resp.json();
+            }
+        }).then(data => {
+            this.setState({user: data, loaded: true});
+        }).catch(err => {console.log('Responded with the error code {err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.');});
+    }
+
+    handlePasswordChange() {
+        
+    }
+
+    selectDropdown(type, e) {
+        console.log(e);
+        console.log(type);
+    }
+
+    getComments() {
+        let commentsType = this.state.commentsType;
+        let sortOption = this.state.sortOption;
+        let commentsArray = this.state.user.activity.author_comments.concat(this.state.user.activity.book_comments);
+        console.log(commentsArray);
+        commentsArray.sort((a, b) => b.attitude - a.attitude)
+        console.log(commentsArray);
+        const commentField = commentsArray.map((obj) =>
+                <ListGroupItem>
+                Topic: {obj.topic}   Likes: {obj.attitude}   Created: {obj.creation_date}   Edited: {obj.edition_date}   Link: <Link to={`/${obj.entity.name}/${obj.entity.id}`}>link</Link>
+                </ListGroupItem>
+        );
+        console.log(commentField);
+        return commentField;
+    }
+
+    render() {
+        if (!this.state.loaded) {
+            const warning = this.state.warning;
+            return(<div>{warning.length > 0 ? {warning} : <h4>Loading...</h4>}</div>);
+        } else {
+            const user = this.state.user;
+            const comments = this.getComments();
+
+            return(
+                <div>
+                    <PageHeader>User Cabinet</PageHeader>
+                    <Panel><strong>Username</strong>: {user.username}</Panel>
+                    <Panel><strong>Email</strong>: {user.email}</Panel>
+                    <Panel><strong>Registration date</strong>: {user.confirmed_at}</Panel>
+                    <Panel><strong>Access level</strong>: {user.role}</Panel>
+                    <hr/>
+                    <h4 className='text-center'>Your Comments Section</h4>
+                    <DropdownButton title='Sort comments' id='sorting-menu-dropdown' onSelect={(e) => {this.selectDropdown('sort', e)}}>
+                    <MenuItem eventKey="most-popular" active={this.state.commentsDisplay.sortOption == 'most-popular'? true: false}>Most Popular</MenuItem>
+                    <MenuItem eventKey="most-hated">Most hated (only negative likes count)</MenuItem>
+                    <MenuItem eventKey="creation-date">Creation date</MenuItem>
+                    <MenuItem eventKey="last-change">Last change date (exclude unedited)</MenuItem>
+                    <MenuItem eventKey="creation-change">Creation/last change date</MenuItem>
+                    </DropdownButton>
+
+                    <DropdownButton title='Comment type' id='comment-type-dropdown' onSelect={(e) => {this.selectDropdown('type', e)}}>
+                    <MenuItem eventKey="all">All</MenuItem>
+                    <MenuItem eventKey="authors">Authors</MenuItem>
+                    <MenuItem eventKey="books">Books</MenuItem>
+                    </DropdownButton>
+                    <Button name='sort-up' id='sort-up'><Glyphicon glyph='glyphicon glyphicon-triangle-top'/></Button>
+                    <Button name='sort-down' id='sort-down'><Glyphicon glyph='glyphicon glyphicon-triangle-bottom'/></Button>
+                    <Panel>
+                    <ListGroup>
+                    {comments}
+                </ListGroup>
+                    </Panel>
+                </div>
+            );
+        }
+    }
+}
+
+export {UserCabinet};
+
+//TODO: highlight sort Button
+//TODO: sorting option
+//TODO: display:none; display:block

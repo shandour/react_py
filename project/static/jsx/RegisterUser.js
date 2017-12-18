@@ -1,0 +1,131 @@
+import React from 'react';
+
+import {Redirect} from 'react-router-dom';
+
+import {
+    ListGroup,
+    ListGroupItem,
+    HelpBlock,
+    FormGroup,
+    ControlLabel,
+    FormControl,
+    Glyphicon,
+    Checkbox
+} from 'react-bootstrap'
+
+
+function CustomField (props) {
+    let name = props.name == 'password_confirm'? 'Confirm password': `Provide ${props.name}`;
+    return (
+            <FormGroup validationState={props.validationState}>
+            <ControlLabel>{name}</ControlLabel>
+            <FormControl
+        type="text"
+        placeholder={name}
+        name={props.name}
+        onChange={props.onChange}
+        value={props.value}
+        id={props.id}
+        componentClass={props.componentClass}
+        type={props.type}
+            />
+            </FormGroup>
+    );
+}
+
+
+class RegisterUser extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            successStatus: false,
+            errors: {
+                username: [],
+                email: [],
+                password: [],
+                password_confirm: []
+            },
+            inputData: {
+                username: '',
+                email: '',
+                password: '',
+                password_confirm: ''
+            }
+        }
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+    }
+
+    componentDidMount() {
+        fetch('/api/is-logged-in', {credentials: "same-origin"}).then(resp => {
+            if (resp.ok) {
+                this.setState({successStatus: true});
+            }
+        });
+    }
+
+    handleChange(e) {
+        let name = e.target.name;
+        let inputData = Object.assign({}, this.state.inputData);
+        inputData[name] = e.target.value;
+        this.setState({inputData});
+    }
+
+    handleSubmit(e) {
+        e.preventDefault();
+        let bodyObj = Object.assign({}, this.state.inputData);
+        bodyObj['csrf_token'] = window.csrf_token;
+        let myHeaders = new Headers();
+        myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+        const req = new Request('/api/register', {method: 'POST', credentials: 'same-origin', headers: myHeaders, body: new URLSearchParams(bodyObj)});
+        fetch(req).then(resp => {
+            if (resp.ok) {
+                this.setState({successStatus: true});
+                this.props.handleLogin();
+                return;
+            } else {
+                return resp.json().then(data => {
+                    this.setState({errors: data})});
+            }
+        });
+    }
+
+    render () {
+        const {errors, inputData, successStatus} = this.state;
+
+        if (successStatus) {
+            return(<Redirect to="/"/>);
+        }
+
+        const inputFields =  Object.keys(inputData).map((key) => {
+            let state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
+            let type = key == 'password' || key == 'password_confirm'? 'password': 'text';
+            return (
+                    <div>
+                    <CustomField name={`${key}`} onChange={this.handleChange} validationState={state} type={type}/>
+                    <HelpBlock>
+                    {typeof errors[key] !== 'undefined' && errors[key].length > 0 &&
+                     errors[key]
+                    }
+                </HelpBlock>
+                    </div>
+            );
+        });
+
+        const glyph = <Glyphicon glyph="glyphicon glyphicon-king"/>;
+
+        return (
+                <div>
+
+                <form onSubmit={this.handleSubmit}>
+                {inputFields}
+                <FormControl type="submit" value='Register' id="submit-button"/>
+               </form>
+
+                </div>
+        );
+    }
+}
+
+
+export {RegisterUser};

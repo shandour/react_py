@@ -23,6 +23,15 @@ def create_db():
 
 
 @manager.command
+def drop_db():
+    "Drops the database"
+
+    from project.models import db
+
+    db.drop_all()
+
+
+@manager.command
 @manager.option('-u', '--username', dest='username')
 @manager.option('-e', '--email', dest='email')
 @manager.option('-p', '--password', dest='password')

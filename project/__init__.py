@@ -17,7 +17,9 @@ def create_app(settings_module='project.settings'):
     from project.security import security, user_datastore
     from project.forms import UpgradedRegisterForm
     security.init_app(app, datastore=user_datastore,
-                      register_form=UpgradedRegisterForm)
+                      register_form=UpgradedRegisterForm,
+                      register_blueprint=False
+                      )
 
     from project.forms import csrf
     csrf.init_app(app)
