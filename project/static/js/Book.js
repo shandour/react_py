@@ -43497,9 +43497,8 @@ var Comment = function (_React$Component) {
 
         var _this = _possibleConstructorReturn(this, (Comment.__proto__ || Object.getPrototypeOf(Comment)).call(this, props));
 
-        var commentInfo = Object.assign({}, _this.props.commentInfo);
         _this.state = {
-            commentInfo: commentInfo,
+            commentInfo: _this.props.commentInfo,
             beingEdited: false,
             errors: {
                 topic: [],
@@ -43520,6 +43519,13 @@ var Comment = function (_React$Component) {
     }
 
     _createClass(Comment, [{
+        key: 'componentDidMount',
+        value: function componentDidMount() {
+            if (this.props.shouldFocus) {
+                location.hash = this.state.commentInfo.id;
+            }
+        }
+    }, {
         key: 'handleEditSubmit',
         value: function handleEditSubmit(e) {
             var _this2 = this;
@@ -43679,12 +43685,14 @@ var Comment = function (_React$Component) {
                 );
             }
 
+            var myStyleClass = this.props.shouldFocus ? 'focused-comment' : null;
+
             return _react2.default.createElement(
                 'div',
-                null,
+                { className: myStyleClass },
                 _react2.default.createElement(
                     'div',
-                    { 'class': 'comment-info' },
+                    { className: 'comment-info' },
                     'A comment by ',
                     _react2.default.createElement(
                         'span',
@@ -43752,7 +43760,7 @@ var Comment = function (_React$Component) {
                     null,
                     _react2.default.createElement(
                         'span',
-                        { 'class': 'delete-button' },
+                        { className: 'delete-button' },
                         ' ',
                         _react2.default.createElement(
                             _reactBootstrap.Button,
@@ -43772,7 +43780,7 @@ var Comment = function (_React$Component) {
                         ),
                         _react2.default.createElement(
                             'span',
-                            { 'class': 'attitude-button' },
+                            { className: 'attitude-button' },
                             _react2.default.createElement(
                                 _reactBootstrap.Button,
                                 { id: commentInfo.id, name: 'like', onClick: this.reactToComment, bsStyle: liked },
@@ -43781,7 +43789,7 @@ var Comment = function (_React$Component) {
                         ),
                         _react2.default.createElement(
                             'span',
-                            { 'class': 'attitude-button' },
+                            { className: 'attitude-button' },
                             _react2.default.createElement(
                                 _reactBootstrap.Button,
                                 { id: commentInfo.id, name: 'dislike', onClick: this.reactToComment, bsStyle: disliked },
@@ -43791,7 +43799,7 @@ var Comment = function (_React$Component) {
                     ),
                     _react2.default.createElement(
                         'div',
-                        { 'class': 'comment-topic' },
+                        { className: 'comment-topic' },
                         _react2.default.createElement(
                             'strong',
                             null,
@@ -43812,7 +43820,7 @@ var Comment = function (_React$Component) {
                     ),
                     _react2.default.createElement(
                         'span',
-                        { 'class': 'edit-impossible-warning' },
+                        { className: 'edit-impossible-warning' },
                         warning
                     )
                 )
@@ -43966,10 +43974,12 @@ var Comments = function (_React$Component2) {
                         };
                         var username = c.username;
                         var disabled = c.current_user_wrote ? false : true;
+                        var shouldFocus = location.hash == '#' + c.id ? true : false;
+                        console.log([c.id, shouldFocus]);
                         comments.push(_react2.default.createElement(
                             'div',
                             { 'class': 'comment' },
-                            _react2.default.createElement(Comment, { key: commentInfo.id.toString(), commentInfo: commentInfo, username: username, handleDeleteComment: this.handleDeleteComment, loggedIn: this.state.loggedIn, entityType: this.props.entityType, countInArray: count, deleteDisabled: disabled })
+                            _react2.default.createElement(Comment, { key: commentInfo.id.toString(), commentInfo: commentInfo, username: username, handleDeleteComment: this.handleDeleteComment, loggedIn: this.state.loggedIn, entityType: this.props.entityType, countInArray: count, deleteDisabled: disabled, shouldFocus: shouldFocus })
                         ));
                         count++;
                     }

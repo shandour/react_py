@@ -54,6 +54,7 @@ class Author extends React.Component {
     }
 
     componentDidMount() {
+        console.log(this.props.location.hash);
         fetch(`/api/authors/${this.props.match.params.authorId}`).then(results => {
             if (results.status == 404) {
                 this.setState({errorCode404: true});

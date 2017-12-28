@@ -35,16 +35,15 @@ function CustomField (props) {
 class Comment extends React.Component {
     constructor(props) {
         super(props);
-        const commentInfo = Object.assign({}, this.props.commentInfo);
         this.state = {
-            commentInfo: commentInfo,
+            commentInfo: this.props.commentInfo,
             beingEdited: false,
             errors: {
                 topic: [],
                 text: []
             },
             warning: null,
-            deleteWarning: false
+            deleteWarning: false,
         };
 
         this.handleEdit = this.handleEdit.bind(this);
@@ -54,6 +53,12 @@ class Comment extends React.Component {
         this.toggleDeleteAlert = this.toggleDeleteAlert.bind(this);
         this.handleAlertDismiss = this.handleAlertDismiss.bind(this);
         this.handleConfirmDelete = this.handleConfirmDelete.bind(this);
+    }
+
+    componentDidMount () {
+        if (this.props.shouldFocus) {
+            location.hash = this.state.commentInfo.id;
+        }
     }
 
     handleEditSubmit(e) {
@@ -171,10 +176,12 @@ class Comment extends React.Component {
             );
         }
 
-        return (
-                <div>
+        let myStyleClass = this.props.shouldFocus ? 'focused-comment' : null;
 
-                <div class="comment-info">
+        return (
+                <div className={myStyleClass}>
+
+                <div className="comment-info">
                 A comment by <span class='username'>{this.props.username}</span>. Created {commentInfo.created_at}.
                 {commentInfo.edited
                  ? <span> Edited: {commentInfo.edited}</span>
@@ -213,20 +220,20 @@ class Comment extends React.Component {
              </form>
              :
              <div>
-             <span class='delete-button'> <Button name ='delete-button' onClick={this.toggleDeleteAlert} disabled={this.props.deleteDisabled}><Glyphicon glyph='glyphicon glyphicon-remove' /></Button> </span>
+             <span className='delete-button'> <Button name ='delete-button' onClick={this.toggleDeleteAlert} disabled={this.props.deleteDisabled}><Glyphicon glyph='glyphicon glyphicon-remove' /></Button> </span>
              <div>
               Likes: <Badge>{commentInfo.likes_count}</Badge>
-             <span class='attitude-button'><Button id={commentInfo.id} name='like' onClick={this.reactToComment} bsStyle={liked}><Glyphicon glyph='glyphicon glyphicon-thumbs-up'/></Button></span>
-             <span class='attitude-button'><Button id={commentInfo.id} name='dislike' onClick={this.reactToComment} bsStyle={disliked}><Glyphicon glyph='glyphicon glyphicon-thumbs-down'/></Button></span>
+             <span className='attitude-button'><Button id={commentInfo.id} name='like' onClick={this.reactToComment} bsStyle={liked}><Glyphicon glyph='glyphicon glyphicon-thumbs-up'/></Button></span>
+             <span className='attitude-button'><Button id={commentInfo.id} name='dislike' onClick={this.reactToComment} bsStyle={disliked}><Glyphicon glyph='glyphicon glyphicon-thumbs-down'/></Button></span>
              </div>
 
-             <div class='comment-topic'><strong>Topic</strong>: {commentInfo.topic}</div>
+             <div className='comment-topic'><strong>Topic</strong>: {commentInfo.topic}</div>
              <Well>
              {commentInfo.text}
              </Well>
 
              <Button id={commentInfo.id} onClick={this.handleEdit}>Edit</Button>
-             <span class='edit-impossible-warning'>{warning}</span>
+             <span className='edit-impossible-warning'>{warning}</span>
              </div>
             }
 
@@ -344,9 +351,11 @@ class Comments extends React.Component{
                 };
                 const username = c.username;
                 const disabled = c.current_user_wrote ? false : true;
+                const shouldFocus = location.hash == `#${c.id}` ? true : false;
+                console.log([c.id, shouldFocus]);
                 comments.push(
                         <div class="comment">
-                        <Comment key={commentInfo.id.toString()} commentInfo={commentInfo} username={username} handleDeleteComment={this.handleDeleteComment} loggedIn={this.state.loggedIn} entityType={this.props.entityType} countInArray={count} deleteDisabled={disabled}/>
+                        <Comment key={commentInfo.id.toString()} commentInfo={commentInfo} username={username} handleDeleteComment={this.handleDeleteComment} loggedIn={this.state.loggedIn} entityType={this.props.entityType} countInArray={count} deleteDisabled={disabled} shouldFocus={shouldFocus}/>
                         </div>
                 );
                 count++;

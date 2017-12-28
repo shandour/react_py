@@ -72,6 +72,22 @@ body {
     float: right;
 }
 
+#expansion-contraction-button {
+    text-align: center;
+}
+
+#toggle-password {
+    float: right;
+}
+
+#change-password-div {
+    margin: 15px 10px 10px 10px;
+}
+
+#expand-comment {
+    margin-right: 5px;
+}
+
 .delete-button {
     float:right;
 }
@@ -111,4 +127,8 @@ body {
 .well {
     margin-left: 1em;
     margin-right: 1em;
+}
+
+.focused-comment {
+    background-color: rgb(153, 204, 255);
 }

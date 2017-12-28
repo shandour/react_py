@@ -3,11 +3,13 @@ from collections import OrderedDict
 
 import datetime
 
+from math import ceil
+
 from project.models import Author, Book, AuthorComment, BookComment, User, db
 
-from flask import abort
+from flask import abort, current_app as app
 
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 
 def get_all_authors_with_sections():
@@ -57,8 +59,11 @@ def get_book_by_id(id=None):
     )
     return book
 
-def get_user_by_id(id=None):
-    user = User.query.get_or_404(id)
+#for comments invoke the get by sort option function
+def get_user_by_id(sort_dict, user_id=None):
+    user = User.query.get_or_404(user_id)
+    comments_dict = sort_user_comments(sort_dict, user_id)
+
     return {
         'id': user.id,
         'username': user.username,
@@ -66,36 +71,74 @@ def get_user_by_id(id=None):
         'confirmed_at': user.confirmed_at,
         'role': user.roles if user.roles else 'user',
         'activity': {
-            'author_comments': [
-                {'id': c.id,
-                 'topic': c.topic if len(c.topic) <=20
-                 else c.topic[:20] + '...',
-                 'attitude': c.likes_count,
-                 'creation_date': c.created_at,
-                 'edition_date': c.edited,
-                 'entity': {
-                     'name': 'authors',
-                     'id': c.author_id
-                }
-                }
-                for c in user.author_comments
-            ],
-            'book_comments': [
-                {'id': c.id,
-                 'topic': c.topic if len(c.topic) <=20
-                 else c.topic[:20] + '...',
-                 'attitude': c.likes_count,
-                 'creation_date': c.created_at,
-                 'edition_date': c.edited,
-                 'entity': {
-                     'name': 'books',
-                     'id': c.book_id
-                 }
-                }
-                for c in user.book_comments
-            ]
+            'comments': comments_dict['comments'],
+            'pages': comments_dict['pages']
         }
     }
+
+def sort_user_comments(sort_dict, user_id=None):
+    user = User.query.get_or_404(user_id)
+    comments_per_page = app.config['USER_CABINET_PAGINATION_PER_PAGE']
+    comments_type = (AuthorComment if sort_dict['comments_type'] == 'authors'
+                     else BookComment)
+    comments_query = (comments_type.query
+                        .filter(comments_type.user_id == user.id))
+
+    if sort_dict['sort_option'] == 'most-popular':
+        sort_query = (comments_type.likes_count.asc()
+                      if sort_dict['sort_direction'] == 'asc'
+                      else comments_type.likes_count.desc())
+    elif sort_dict['sort_option'] == 'most-hated':
+        comments_query = comments_query.filter(comments_type.likes_count > 0)
+        sort_query = (comments_type.likes_count.asc()
+                      if sort_dict['sort_direction'] == 'asc'
+                      else comments_type.likes_count.desc())
+    elif sort_dict['sort_option'] == 'creation-date':
+        sort_query = (comments_type.created_at.asc()
+                      if sort_dict['sort_direction'] == 'asc'
+                      else comments_type.created_at.desc())
+    elif sort_dict['sort_option'] == 'last-change':
+        comments_query = comments_query.filter(comments_type.edited.isnot(None))
+        sort_query = (comments_type.edited.asc()
+                      if sort_dict['sort_direction'] == 'asc'
+                      else comments_type.edited.desc())
+    elif sort_dict['sort_option'] == 'creation-change':
+        if sort_dict['sort_direction'] == 'asc':
+            sort_query = (
+                case(
+                    [(AuthorComment.edited.isnot(None),
+                      AuthorComment.edited)],
+                    else_=AuthorComment.created_at).asc())
+        else:
+            sort_query = (
+                case(
+                [(AuthorComment.edited.isnot(None),
+                  AuthorComment.edited)],
+                else_=AuthorComment.created_at).desc())
+    comments_pagination = (comments_query
+                .order_by(sort_query)
+                .paginate(
+                    page=int(sort_dict['page']),
+                    per_page=comments_per_page))
+
+    return {
+        'comments': [
+            {'id': c.id,
+             'topic': c.topic if len(c.topic) <=20
+                 else c.topic[:20] + '...',
+             'attitude': c.likes_count,
+             'creation_date': c.created_at,
+             'edition_date': c.edited,
+             'text': c.text,
+             'entity': {
+                 'name': 'authors' if hasattr(c, 'author_id') else 'books',
+                 'id': c.author_id if hasattr(c, 'author_id') else c.book_id
+             }
+            }
+            for c in comments_pagination.items],
+        'pages': comments_pagination.pages
+    }
+
 
 def get_all_books_with_sections():
     """Returns an OrderedDict of first name letters of corresponding books"""

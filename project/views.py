@@ -4,14 +4,28 @@ from flask import (
     jsonify,
     request,
     Response,
-    abort
+    abort,
+    after_this_request
 )
 
-from flask_security import current_user, logout_user, login_user, login_required, LoginForm
+from flask_security import (
+    current_user,
+    logout_user,
+    login_user,
+    login_required,
+    LoginForm,
+)
+
+from flask_security.views import _commit
+
+from flask_security.forms import ChangePasswordForm
 
 from flask_security.decorators import anonymous_user_required
 
 from flask_security.registerable import register_user
+
+from flask_security.changeable import change_user_password
+
 
 from project.security import ADMIN_ROLE, EDITOR_ROLE
 
@@ -43,7 +57,8 @@ from project.db_operations import (
     get_all_book_comments_by_book_id,
     check_if_user_wrote_comment,
     react_to_comment,
-    delete_comment as delete_one_comment
+    delete_comment as delete_one_comment,
+    sort_user_comments
 )
 
 
@@ -304,10 +319,33 @@ def register():
         resp.status = '401'
         return resp
 
+#custom change password mechanism
+@app.route('/api/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm(request.form)
+    if form.validate():
+        after_this_request(_commit)
+        change_user_password(current_user._get_current_object(),
+                             form.new_password.data)
+        return Response(status='202')
+    else:
+        resp = jsonify(form.errors)
+        resp.status = '401'
+        return resp
 
-@app.route('/api/get-current-user')
-def get_user_info():
+@app.route('/api/get-user-comments')
+def get_user_comments_sorted():
     if not current_user.is_authenticated:
-        return Response(status='403')
-    user = get_user_by_id(current_user.id)
-    return jsonify(user)
+            return Response(status='403')
+    sort_dict = {
+        'sort_option': request.args.get('sortOption'),
+        'sort_direction': request.args.get('sortDirection'),
+        'comments_type': request.args.get('commentsType'),
+        'page': request.args.get('page')
+    }
+
+    comments = (sort_user_comments(sort_dict, current_user.id)
+                if not request.args.get('initial')
+                else get_user_by_id(sort_dict, current_user.id))
+    return jsonify(comments)

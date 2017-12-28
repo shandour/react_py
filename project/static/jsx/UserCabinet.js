@@ -14,30 +14,78 @@ import {
     Badge,
     Label,
     Tooltip,
-    OverlayTrigger
+    OverlayTrigger,
+    Pagination,
+    FormGroup,
+    ControlLabel,
+    FormControl,
+    HelpBlock
 } from 'react-bootstrap'
 
+
+function CustomField (props) {
+    let name = 'Provide ' +props.name.replace(/_+/, ' ');
+
+    return (
+        <FormGroup validationState={props.validationState}>
+            <ControlLabel>{name}</ControlLabel>
+        <FormControl
+        type={props.type}
+    placeholder={name}
+    name={props.name}
+    onChange={props.onChange}
+    value={props.value}
+    id={props.id}
+        />
+        </FormGroup>
+    );
+}
 
 class UserCabinet extends React.Component {
     constructor(props) {
         super(props);
+
+        this.password = {
+                'password': '',
+                'new_password': '',
+                'new_password_confirm': ''
+        };
+
+        this.errors = {
+                'password': [],
+                'new_password': [],
+                'new_password_confirm': []
+        };
+
         this.state = {
             user: {},
+            passwordChangeToggle: false,
+            password: this.password,
+            errors: this.errors,
             loaded: false,
+            passwordChangeSuccess: false,
             warning: '',
             commentsDisplay: {
-                commentsType: 'all',
+                commentsType: 'authors',
                 sortOption: 'most-popular',
-                sortDirection: 'desc'
+                sortDirection: 'desc',
+                activePage: 1,
+                expandedComments: [],
+                expandAll: false
             }
         };
         this.handlePasswordChange = this.handlePasswordChange.bind(this);
         this.selectDropdown = this.selectDropdown.bind(this);
         this.handleSort = this.handleSort.bind(this);
+        this.handleSelect = this.handleSelect.bind(this);
+        this.expandCommentInfo = this.expandCommentInfo.bind(this);
+        this.fullExpandContract = this.fullExpandContract.bind(this);
+        this.togglePasswordChange = this.togglePasswordChange.bind(this);
+        this.submitPassword = this.submitPassword.bind(this);
     }
 
     componentDidMount() {
-        let req = new Request('/api/get-current-user', {credentials: "same-origin"});
+        let req = new Request(`/api/get-user-comments?sortOption=most-popular&sortDirection=desc&commentsType=authors&page=1&initial=True`, {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (!resp.ok) {
                 this.setState({warning: 'You have no permission to view this.'});
@@ -46,109 +94,137 @@ class UserCabinet extends React.Component {
             }
         }).then(data => {
             this.setState({user: data, loaded: true});
-        }).catch(err => {console.log('Responded with the error code {err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.');});
+        }).catch(err => {console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);});
     }
 
-    handlePasswordChange() {
-        
+    handlePasswordChange(e) {
+        let password = Object.assign({}, this.state.password);
+        password[e.target.name] = e.target.value;
+        this.setState({password});
+    }
+
+    togglePasswordChange() {
+        this.setState({passwordChangeToggle: !this.state.passwordChangeToggle, passwordChangeSuccess: false});
+    }
+
+    submitPassword(e) {
+        e.preventDefault();
+        let bodyObj = Object.assign({}, this.state.password);
+        bodyObj['csrf_token'] = window.csrf_token;
+        let myHeaders = new Headers();
+        myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+        const req = new Request('/api/change-password', {method: 'POST', credentials: 'same-origin', headers: myHeaders, body: new URLSearchParams(bodyObj)});
+        fetch(req).then(resp => {
+            if (resp.ok){
+                this.setState({password: this.password,
+                               errors: this.errors,
+                               passwordChangeToggle: false,
+                               passwordChangeSuccess: true});
+            } else if (resp.status == '401') {
+                resp.json().then(data => {
+                    this.setState({errors: data});
+                });
+            }
+        })
     }
 
     handleSort(e) {
         let commentsDisplay = Object.assign({}, this.state.commentsDisplay);
         commentsDisplay.sortDirection = e.target.name;
-        this.setState({commentsDisplay});
+        this.getCommentsOnChange(commentsDisplay);
     }
 
     selectDropdown(type, eventKey) {
         let commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+        console.log(eventKey);
         commentsDisplay[type] = eventKey;
+        console.log(commentsDisplay[type]);
+        this.getCommentsOnChange(commentsDisplay);
+    }
+
+    handleSelect(eventKey) {
+        let commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+        commentsDisplay.activePage = eventKey;
+        this.getCommentsOnChange(commentsDisplay);
+    }
+
+    getCommentsOnChange(commentsDisplay) {
+        const commentsType = commentsDisplay.commentsType;
+        const sortOption = commentsDisplay.sortOption;
+        const sortDirection = commentsDisplay.sortDirection;
+        const currentPage = commentsDisplay.activePage;
+        console.log(commentsType);
+        let req = new Request(`/api/get-user-comments?sortOption=${sortOption}&sortDirection=${sortDirection}&commentsType=${commentsType}&page=${currentPage}`, {credentials: 'same-origin'});
+
+        fetch(req).then(resp => {
+            if (!resp.ok) {
+                this.setState({warning: 'You have no permission to view this.'});
+            } else {
+                return resp.json();
+            }
+        }).then(data => {
+            let user = this.state.user;
+            user.activity = data;
+            this.setState({user: user, commentsDisplay: commentsDisplay});
+        }).catch(err => {console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);});
+    }
+
+    expandCommentInfo(e) {
+        let commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+        const commentId = Number(e.target.id);
+        if (commentsDisplay.expandedComments.includes(commentId)) {
+            commentsDisplay.expandedComments.splice(commentsDisplay.expandedComments.indexOf(commentId), 1);
+        } else {
+            commentsDisplay.expandedComments.push(commentId);
+        }
         this.setState({commentsDisplay});
     }
 
-    getComments() {
-        let commentsType = this.state.commentsDisplay.commentsType;
-        let sortOption = this.state.commentsDisplay.sortOption;
-        let commentsArray;
-
-        switch (commentsType) {
-        case 'all':
-            commentsArray = this.state.user.activity.author_comments.concat(this.state.user.activity.book_comments);
-            break;
-        case 'books':
-            commentsArray = this.state.user.activity.book_comments;
-            break;
-        case 'authors':
-            commentsArray = this.state.user.activity.author_comments;
-            break;
+    fullExpandContract() {
+        let commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+        if (!commentsDisplay.expandAll) {
+            commentsDisplay.expandedComments = Array.from(new Array(this.state.user.activity.comments.length).keys());
+            commentsDisplay.expandAll = true;
+        } else {
+            commentsDisplay.expandedComments = [];
+            commentsDisplay.expandAll = false;
         }
-
-        let sortingFunction;
-
-        switch (sortOption) {
-        case 'most-popular':
-            sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? (a, b) => b.attitude - a.attitude : (a, b) => a.attitude - b.attitude;
-            break;
-        case 'most-hated':
-            commentsArray = commentsArray.filter(item => item.attitude < 0);
-            sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? (a, b) => -(b.attitude - a.attitude) : (a, b) => -(a.attitude - b.attitude);
-            break;
-        case 'creation-date':
-            sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ?
-                (a, b) => {
-                    let result = b.creation_date > a.creation_date ? 1: -1;
-                    return result;
-                } : (a, b) => {
-                    let result = a.creation_date > b.creation_date ? 1: -1;
-                    return result;
-                }
-            break;
-        case 'last-change':
-            commentsArray = commentsArray.filter(item => item.edition_date);
-            sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ?
-                (a, b) => {
-                    let first = b.edition_date ? b.edition_date : b.creation_date;
-                    let second = a.edition_date ? a.edition_date : a.creation_date;
-                    let result = first > second ? 1 : -1;
-                    return result;
-                } : (a, b) => {
-                    let first = a.edition_date ? a.edition_date : a.creation_date;
-                    let second = b.edition_date ? b.edition_date : b.creation_date;
-                    let result = first > second ? 1 : -1;
-                    return result;
-                };
-            break;
-        case 'creation-change':
-        sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ?
-                (a, b) => {
-                    let first = b.edition_date ? b.edition_date : b.creation_date;
-                    let second = a.edition_date ? a.edition_date : a.creation_date;
-                    let result = first > second? 1 : -1;
-                    return result;
-                } : (a, b) => {
-                    let first =  a.edition_date ? a.edition_date : a.creation_date;
-                    let second = b.edition_date ? b.edition_date : b.creation_date;
-                    let result = first > second? 1 : -1;
-                    return result;
-                };
-            break;
-        }
-
-        commentsArray.sort(sortingFunction);
-        const commentField = commentsArray.map((obj) =>
-                                               <ListGroupItem>
-                                               <strong>Topic</strong>: <Label>{obj.topic}</Label>   <strong>Created</strong>: {obj.creation_date}   {obj.edition_date && <span><strong>Edited</strong>: {obj.edition_date}</span>}   <strong>Link</strong>: <Link to={`/${obj.entity.name}/${obj.entity.id}`}>link</Link> <OverlayTrigger placement='top' overlay={<Tooltip id="tooltip">Likes count</Tooltip>}><Badge>{obj.attitude}</Badge></OverlayTrigger>
-                                               </ListGroupItem>
-        );
-        return commentField;
+        this.setState({commentsDisplay});
     }
+
 
     render() {
         if (!this.state.loaded) {
             const warning = this.state.warning;
             return(<div>{warning.length > 0 ? {warning} : <h4>Loading...</h4>}</div>);
         } else {
-            const user = this.state.user;
-            const comments = this.getComments();
+            const {user,
+                   passwordChangeToggle,
+                   passwordChangeSuccess,
+                   password,
+                   errors} = this.state;
+            let count = -1;
+            const comments = user.activity.comments.map(obj => {
+                count++;
+                return(
+                        <ListGroupItem key={`${obj.id}-${obj.entity.name}-comment`}>
+                        <span className='expand-comment'>
+                        <Button onClick={this.expandCommentInfo} id={`${count}`} bsStyle='small'><Glyphicon glyph='glyphicon glyphicon-collapse-down'/></Button>
+                        </span>
+                        <strong>Topic</strong>: <Label>{obj.topic}</Label>   <strong>Created</strong>: {obj.creation_date}   {obj.edition_date && <span><strong>Edited</strong>: {obj.edition_date}</span>}   <strong>Link</strong>: <Link to={{
+                            pathname: `/${obj.entity.name}/${obj.entity.id}`,
+                            hash: `#${obj.id}`
+                        }}>link</Link> <OverlayTrigger placement='top' overlay={<Tooltip id="tooltip">Likes count</Tooltip>}><Badge>{obj.attitude}</Badge></OverlayTrigger>
+                        {this.state.commentsDisplay.expandedComments.includes(count) &&
+                         <div className='comment-content'>
+                         {obj.text}
+                         </div>
+                        }
+                        </ListGroupItem>)
+            }
+        );
+
+            const passwordPanelStyle = passwordChangeSuccess ? {'border-color': 'green'} :null
 
             return(
                 <div>
@@ -157,8 +233,55 @@ class UserCabinet extends React.Component {
                     <Panel><strong>Email</strong>: {user.email}</Panel>
                     <Panel><strong>Registration date</strong>: {user.confirmed_at}</Panel>
                     <Panel><strong>Access level</strong>: {user.role}</Panel>
+
+                    <Panel style={passwordPanelStyle}>
+                    <strong>Change password</strong>
+                    <Button onClick={this.togglePasswordChange} id='toggle-password'>Change password</Button>
+                    {passwordChangeToggle &&
+                     <div id='change-password-div'>
+
+                     {
+                         Object.keys(password).map((key) => {
+                             let state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
+                             return (
+                                  <div>
+                                     <CustomField
+                                 name={key}
+                                 onChange={this.handlePasswordChange}
+                                 validationState={state}
+                                 type='password'
+                                 key={key}
+                                 value={password[key]}
+                                     />
+                                     <HelpBlock>
+                                     {state !== null &&
+                                      errors[key]
+                                     }
+                                 </HelpBlock>
+                                     </div>
+                             );
+                     })
+                     }
+
+                     <Button type='submit' onClick={this.submitPassword}>Confirm change</Button>
+
+                     </div>}
+                    </Panel>
+
                     <hr/>
+
+
                     <h4 className='text-center'>Your Comments Section</h4>
+
+                    <div id='expansion-contraction-button'>
+                    <Button bsSize='small' id='expand-contract-button' onClick={this.fullExpandContract}>
+                    {!this.state.commentsDisplay.expandAll
+                     ? <span>Expand</span>
+                     : <span>Collapse</span>
+                    }
+                </Button>
+                    </div>
+
                     <DropdownButton title='Sort comments' id='sorting-menu-dropdown' onSelect={(e) => {this.selectDropdown('sortOption', e)}}>
                     <MenuItem eventKey="most-popular" active={this.state.commentsDisplay.sortOption == 'most-popular'? true: false}>Most Popular</MenuItem>
                     <MenuItem eventKey="most-hated" active={this.state.commentsDisplay.sortOption == 'most-hated'? true: false}>Most hated (only negative likes count)</MenuItem>
@@ -168,7 +291,6 @@ class UserCabinet extends React.Component {
                     </DropdownButton>
 
                     <DropdownButton title='Comment type' id='comment-type-dropdown' onSelect={(e) => {this.selectDropdown('commentsType', e)}}>
-                    <MenuItem eventKey="all" active={this.state.commentsDisplay.commentsType == 'all'? true: false}>All</MenuItem>
                     <MenuItem eventKey="authors" active={this.state.commentsDisplay.commentsType == 'authors'? true: false}>Authors</MenuItem>
                     <MenuItem eventKey="books" active={this.state.commentsDisplay.commentsType == 'books'? true: false}>Books</MenuItem>
                     </DropdownButton>
@@ -179,6 +301,20 @@ class UserCabinet extends React.Component {
                     <Panel>
                     <ListGroup>
                     {comments}
+                {user.activity.comments.pages > 1 &&
+                 <Pagination
+                 prev
+                 next
+                 first
+                 last
+                 ellipsis
+                 boundaryLinks
+                 items={user.activity.comments.pages}
+                 maxButtons={5}
+                 activePage={this.state.commentsDisplay.activePage}
+                 onSelect={this.handleSelect}
+                 />
+                }
                 </ListGroup>
                     </Panel>
                 </div>
@@ -189,7 +325,3 @@ class UserCabinet extends React.Component {
 
 export {UserCabinet};
 
-
-//TODO: sorting option
-//TODO: display:none; display:block
-//TODO:passwordchange

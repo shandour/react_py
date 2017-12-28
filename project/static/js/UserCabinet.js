@@ -43412,6 +43412,28 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+function CustomField(props) {
+    var name = 'Provide ' + props.name.replace(/_+/, ' ');
+
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            type: props.type,
+            placeholder: name,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id
+        })
+    );
+}
+
 var UserCabinet = function (_React$Component) {
     _inherits(UserCabinet, _React$Component);
 
@@ -43420,19 +43442,43 @@ var UserCabinet = function (_React$Component) {
 
         var _this = _possibleConstructorReturn(this, (UserCabinet.__proto__ || Object.getPrototypeOf(UserCabinet)).call(this, props));
 
+        _this.password = {
+            'password': '',
+            'new_password': '',
+            'new_password_confirm': ''
+        };
+
+        _this.errors = {
+            'password': [],
+            'new_password': [],
+            'new_password_confirm': []
+        };
+
         _this.state = {
             user: {},
+            passwordChangeToggle: false,
+            password: _this.password,
+            errors: _this.errors,
             loaded: false,
+            passwordChangeSuccess: false,
             warning: '',
             commentsDisplay: {
-                commentsType: 'all',
+                commentsType: 'authors',
                 sortOption: 'most-popular',
-                sortDirection: 'desc'
+                sortDirection: 'desc',
+                activePage: 1,
+                expandedComments: [],
+                expandAll: false
             }
         };
         _this.handlePasswordChange = _this.handlePasswordChange.bind(_this);
         _this.selectDropdown = _this.selectDropdown.bind(_this);
         _this.handleSort = _this.handleSort.bind(_this);
+        _this.handleSelect = _this.handleSelect.bind(_this);
+        _this.expandCommentInfo = _this.expandCommentInfo.bind(_this);
+        _this.fullExpandContract = _this.fullExpandContract.bind(_this);
+        _this.togglePasswordChange = _this.togglePasswordChange.bind(_this);
+        _this.submitPassword = _this.submitPassword.bind(_this);
         return _this;
     }
 
@@ -43441,7 +43487,7 @@ var UserCabinet = function (_React$Component) {
         value: function componentDidMount() {
             var _this2 = this;
 
-            var req = new Request('/api/get-current-user', { credentials: "same-origin" });
+            var req = new Request('/api/get-user-comments?sortOption=most-popular&sortDirection=desc&commentsType=authors&page=1&initial=True', { credentials: "same-origin" });
             fetch(req).then(function (resp) {
                 if (!resp.ok) {
                     _this2.setState({ warning: 'You have no permission to view this.' });
@@ -43451,175 +43497,123 @@ var UserCabinet = function (_React$Component) {
             }).then(function (data) {
                 _this2.setState({ user: data, loaded: true });
             }).catch(function (err) {
-                console.log('Responded with the error code {err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.');
+                console.log('Responded with the error code ' + err + '. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.');
             });
         }
     }, {
         key: 'handlePasswordChange',
-        value: function handlePasswordChange() {}
+        value: function handlePasswordChange(e) {
+            var password = Object.assign({}, this.state.password);
+            password[e.target.name] = e.target.value;
+            this.setState({ password: password });
+        }
+    }, {
+        key: 'togglePasswordChange',
+        value: function togglePasswordChange() {
+            this.setState({ passwordChangeToggle: !this.state.passwordChangeToggle, passwordChangeSuccess: false });
+        }
+    }, {
+        key: 'submitPassword',
+        value: function submitPassword(e) {
+            var _this3 = this;
+
+            e.preventDefault();
+            var bodyObj = Object.assign({}, this.state.password);
+            bodyObj['csrf_token'] = window.csrf_token;
+            var myHeaders = new Headers();
+            myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+            var req = new Request('/api/change-password', { method: 'POST', credentials: 'same-origin', headers: myHeaders, body: new URLSearchParams(bodyObj) });
+            fetch(req).then(function (resp) {
+                if (resp.ok) {
+                    _this3.setState({ password: _this3.password,
+                        errors: _this3.errors,
+                        passwordChangeToggle: false,
+                        passwordChangeSuccess: true });
+                } else if (resp.status == '401') {
+                    resp.json().then(function (data) {
+                        _this3.setState({ errors: data });
+                    });
+                }
+            });
+        }
     }, {
         key: 'handleSort',
         value: function handleSort(e) {
             var commentsDisplay = Object.assign({}, this.state.commentsDisplay);
             commentsDisplay.sortDirection = e.target.name;
-            this.setState({ commentsDisplay: commentsDisplay });
+            this.getCommentsOnChange(commentsDisplay);
         }
     }, {
         key: 'selectDropdown',
         value: function selectDropdown(type, eventKey) {
             var commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+            console.log(eventKey);
             commentsDisplay[type] = eventKey;
+            console.log(commentsDisplay[type]);
+            this.getCommentsOnChange(commentsDisplay);
+        }
+    }, {
+        key: 'handleSelect',
+        value: function handleSelect(eventKey) {
+            var commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+            commentsDisplay.activePage = eventKey;
+            this.getCommentsOnChange(commentsDisplay);
+        }
+    }, {
+        key: 'getCommentsOnChange',
+        value: function getCommentsOnChange(commentsDisplay) {
+            var _this4 = this;
+
+            var commentsType = commentsDisplay.commentsType;
+            var sortOption = commentsDisplay.sortOption;
+            var sortDirection = commentsDisplay.sortDirection;
+            var currentPage = commentsDisplay.activePage;
+            console.log(commentsType);
+            var req = new Request('/api/get-user-comments?sortOption=' + sortOption + '&sortDirection=' + sortDirection + '&commentsType=' + commentsType + '&page=' + currentPage, { credentials: 'same-origin' });
+
+            fetch(req).then(function (resp) {
+                if (!resp.ok) {
+                    _this4.setState({ warning: 'You have no permission to view this.' });
+                } else {
+                    return resp.json();
+                }
+            }).then(function (data) {
+                var user = _this4.state.user;
+                user.activity = data;
+                _this4.setState({ user: user, commentsDisplay: commentsDisplay });
+            }).catch(function (err) {
+                console.log('Responded with the error code ' + err + '. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.');
+            });
+        }
+    }, {
+        key: 'expandCommentInfo',
+        value: function expandCommentInfo(e) {
+            var commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+            var commentId = Number(e.target.id);
+            if (commentsDisplay.expandedComments.includes(commentId)) {
+                commentsDisplay.expandedComments.splice(commentsDisplay.expandedComments.indexOf(commentId), 1);
+            } else {
+                commentsDisplay.expandedComments.push(commentId);
+            }
             this.setState({ commentsDisplay: commentsDisplay });
         }
     }, {
-        key: 'getComments',
-        value: function getComments() {
-            var commentsType = this.state.commentsDisplay.commentsType;
-            var sortOption = this.state.commentsDisplay.sortOption;
-            var commentsArray = void 0;
-
-            switch (commentsType) {
-                case 'all':
-                    commentsArray = this.state.user.activity.author_comments.concat(this.state.user.activity.book_comments);
-                    break;
-                case 'books':
-                    commentsArray = this.state.user.activity.book_comments;
-                    break;
-                case 'authors':
-                    commentsArray = this.state.user.activity.author_comments;
-                    break;
+        key: 'fullExpandContract',
+        value: function fullExpandContract() {
+            var commentsDisplay = Object.assign({}, this.state.commentsDisplay);
+            if (!commentsDisplay.expandAll) {
+                commentsDisplay.expandedComments = Array.from(new Array(this.state.user.activity.comments.length).keys());
+                commentsDisplay.expandAll = true;
+            } else {
+                commentsDisplay.expandedComments = [];
+                commentsDisplay.expandAll = false;
             }
-
-            var sortingFunction = void 0;
-
-            switch (sortOption) {
-                case 'most-popular':
-                    sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? function (a, b) {
-                        return b.attitude - a.attitude;
-                    } : function (a, b) {
-                        return a.attitude - b.attitude;
-                    };
-                    break;
-                case 'most-hated':
-                    commentsArray = commentsArray.filter(function (item) {
-                        return item.attitude < 0;
-                    });
-                    sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? function (a, b) {
-                        return -(b.attitude - a.attitude);
-                    } : function (a, b) {
-                        return -(a.attitude - b.attitude);
-                    };
-                    break;
-                case 'creation-date':
-                    sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? function (a, b) {
-                        var result = b.creation_date > a.creation_date ? 1 : -1;
-                        return result;
-                    } : function (a, b) {
-                        var result = a.creation_date > b.creation_date ? 1 : -1;
-                        return result;
-                    };
-                    break;
-                case 'last-change':
-                    commentsArray = commentsArray.filter(function (item) {
-                        return item.edition_date;
-                    });
-                    sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? function (a, b) {
-                        var first = b.edition_date ? b.edition_date : b.creation_date;
-                        var second = a.edition_date ? a.edition_date : a.creation_date;
-                        var result = first > second ? 1 : -1;
-                        return result;
-                    } : function (a, b) {
-                        var first = a.edition_date ? a.edition_date : a.creation_date;
-                        var second = b.edition_date ? b.edition_date : b.creation_date;
-                        var result = first > second ? 1 : -1;
-                        return result;
-                    };
-                    break;
-                case 'creation-change':
-                    sortingFunction = this.state.commentsDisplay.sortDirection == 'desc' ? function (a, b) {
-                        var first = b.edition_date ? b.edition_date : b.creation_date;
-                        var second = a.edition_date ? a.edition_date : a.creation_date;
-                        var result = first > second ? 1 : -1;
-                        return result;
-                    } : function (a, b) {
-                        var first = a.edition_date ? a.edition_date : a.creation_date;
-                        var second = b.edition_date ? b.edition_date : b.creation_date;
-                        var result = first > second ? 1 : -1;
-                        return result;
-                    };
-                    break;
-            }
-
-            commentsArray.sort(sortingFunction);
-            var commentField = commentsArray.map(function (obj) {
-                return _react2.default.createElement(
-                    _reactBootstrap.ListGroupItem,
-                    null,
-                    _react2.default.createElement(
-                        'strong',
-                        null,
-                        'Topic'
-                    ),
-                    ': ',
-                    _react2.default.createElement(
-                        _reactBootstrap.Label,
-                        null,
-                        obj.topic
-                    ),
-                    '   ',
-                    _react2.default.createElement(
-                        'strong',
-                        null,
-                        'Created'
-                    ),
-                    ': ',
-                    obj.creation_date,
-                    '   ',
-                    obj.edition_date && _react2.default.createElement(
-                        'span',
-                        null,
-                        _react2.default.createElement(
-                            'strong',
-                            null,
-                            'Edited'
-                        ),
-                        ': ',
-                        obj.edition_date
-                    ),
-                    '   ',
-                    _react2.default.createElement(
-                        'strong',
-                        null,
-                        'Link'
-                    ),
-                    ': ',
-                    _react2.default.createElement(
-                        _reactRouterDom.Link,
-                        { to: '/' + obj.entity.name + '/' + obj.entity.id },
-                        'link'
-                    ),
-                    ' ',
-                    _react2.default.createElement(
-                        _reactBootstrap.OverlayTrigger,
-                        { placement: 'top', overlay: _react2.default.createElement(
-                                _reactBootstrap.Tooltip,
-                                { id: 'tooltip' },
-                                'Likes count'
-                            ) },
-                        _react2.default.createElement(
-                            _reactBootstrap.Badge,
-                            null,
-                            obj.attitude
-                        )
-                    )
-                );
-            });
-            return commentField;
+            this.setState({ commentsDisplay: commentsDisplay });
         }
     }, {
         key: 'render',
         value: function render() {
-            var _this3 = this;
+            var _this5 = this;
 
             if (!this.state.loaded) {
                 var warning = this.state.warning;
@@ -43633,8 +43627,97 @@ var UserCabinet = function (_React$Component) {
                     )
                 );
             } else {
-                var user = this.state.user;
-                var comments = this.getComments();
+                var _state = this.state,
+                    user = _state.user,
+                    passwordChangeToggle = _state.passwordChangeToggle,
+                    passwordChangeSuccess = _state.passwordChangeSuccess,
+                    password = _state.password,
+                    errors = _state.errors;
+
+                var count = -1;
+                var comments = user.activity.comments.map(function (obj) {
+                    count++;
+                    return _react2.default.createElement(
+                        _reactBootstrap.ListGroupItem,
+                        { key: obj.id + '-' + obj.entity.name + '-comment' },
+                        _react2.default.createElement(
+                            'span',
+                            { className: 'expand-comment' },
+                            _react2.default.createElement(
+                                _reactBootstrap.Button,
+                                { onClick: _this5.expandCommentInfo, id: '' + count, bsStyle: 'small' },
+                                _react2.default.createElement(_reactBootstrap.Glyphicon, { glyph: 'glyphicon glyphicon-collapse-down' })
+                            )
+                        ),
+                        _react2.default.createElement(
+                            'strong',
+                            null,
+                            'Topic'
+                        ),
+                        ': ',
+                        _react2.default.createElement(
+                            _reactBootstrap.Label,
+                            null,
+                            obj.topic
+                        ),
+                        '   ',
+                        _react2.default.createElement(
+                            'strong',
+                            null,
+                            'Created'
+                        ),
+                        ': ',
+                        obj.creation_date,
+                        '   ',
+                        obj.edition_date && _react2.default.createElement(
+                            'span',
+                            null,
+                            _react2.default.createElement(
+                                'strong',
+                                null,
+                                'Edited'
+                            ),
+                            ': ',
+                            obj.edition_date
+                        ),
+                        '   ',
+                        _react2.default.createElement(
+                            'strong',
+                            null,
+                            'Link'
+                        ),
+                        ': ',
+                        _react2.default.createElement(
+                            _reactRouterDom.Link,
+                            { to: {
+                                    pathname: '/' + obj.entity.name + '/' + obj.entity.id,
+                                    hash: '#' + obj.id
+                                } },
+                            'link'
+                        ),
+                        ' ',
+                        _react2.default.createElement(
+                            _reactBootstrap.OverlayTrigger,
+                            { placement: 'top', overlay: _react2.default.createElement(
+                                    _reactBootstrap.Tooltip,
+                                    { id: 'tooltip' },
+                                    'Likes count'
+                                ) },
+                            _react2.default.createElement(
+                                _reactBootstrap.Badge,
+                                null,
+                                obj.attitude
+                            )
+                        ),
+                        _this5.state.commentsDisplay.expandedComments.includes(count) && _react2.default.createElement(
+                            'div',
+                            { className: 'comment-content' },
+                            obj.text
+                        )
+                    );
+                });
+
+                var passwordPanelStyle = passwordChangeSuccess ? { 'border-color': 'green' } : null;
 
                 return _react2.default.createElement(
                     'div',
@@ -43688,6 +43771,49 @@ var UserCabinet = function (_React$Component) {
                         ': ',
                         user.role
                     ),
+                    _react2.default.createElement(
+                        _reactBootstrap.Panel,
+                        { style: passwordPanelStyle },
+                        _react2.default.createElement(
+                            'strong',
+                            null,
+                            'Change password'
+                        ),
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { onClick: this.togglePasswordChange, id: 'toggle-password' },
+                            'Change password'
+                        ),
+                        passwordChangeToggle && _react2.default.createElement(
+                            'div',
+                            { id: 'change-password-div' },
+                            Object.keys(password).map(function (key) {
+                                var state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
+                                return _react2.default.createElement(
+                                    'div',
+                                    null,
+                                    _react2.default.createElement(CustomField, {
+                                        name: key,
+                                        onChange: _this5.handlePasswordChange,
+                                        validationState: state,
+                                        type: 'password',
+                                        key: key,
+                                        value: password[key]
+                                    }),
+                                    _react2.default.createElement(
+                                        _reactBootstrap.HelpBlock,
+                                        null,
+                                        state !== null && errors[key]
+                                    )
+                                );
+                            }),
+                            _react2.default.createElement(
+                                _reactBootstrap.Button,
+                                { type: 'submit', onClick: this.submitPassword },
+                                'Confirm change'
+                            )
+                        )
+                    ),
                     _react2.default.createElement('hr', null),
                     _react2.default.createElement(
                         'h4',
@@ -43695,9 +43821,26 @@ var UserCabinet = function (_React$Component) {
                         'Your Comments Section'
                     ),
                     _react2.default.createElement(
+                        'div',
+                        { id: 'expansion-contraction-button' },
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { bsSize: 'small', id: 'expand-contract-button', onClick: this.fullExpandContract },
+                            !this.state.commentsDisplay.expandAll ? _react2.default.createElement(
+                                'span',
+                                null,
+                                'Expand'
+                            ) : _react2.default.createElement(
+                                'span',
+                                null,
+                                'Collapse'
+                            )
+                        )
+                    ),
+                    _react2.default.createElement(
                         _reactBootstrap.DropdownButton,
                         { title: 'Sort comments', id: 'sorting-menu-dropdown', onSelect: function onSelect(e) {
-                                _this3.selectDropdown('sortOption', e);
+                                _this5.selectDropdown('sortOption', e);
                             } },
                         _react2.default.createElement(
                             _reactBootstrap.MenuItem,
@@ -43728,13 +43871,8 @@ var UserCabinet = function (_React$Component) {
                     _react2.default.createElement(
                         _reactBootstrap.DropdownButton,
                         { title: 'Comment type', id: 'comment-type-dropdown', onSelect: function onSelect(e) {
-                                _this3.selectDropdown('commentsType', e);
+                                _this5.selectDropdown('commentsType', e);
                             } },
-                        _react2.default.createElement(
-                            _reactBootstrap.MenuItem,
-                            { eventKey: 'all', active: this.state.commentsDisplay.commentsType == 'all' ? true : false },
-                            'All'
-                        ),
                         _react2.default.createElement(
                             _reactBootstrap.MenuItem,
                             { eventKey: 'authors', active: this.state.commentsDisplay.commentsType == 'authors' ? true : false },
@@ -43762,7 +43900,19 @@ var UserCabinet = function (_React$Component) {
                         _react2.default.createElement(
                             _reactBootstrap.ListGroup,
                             null,
-                            comments
+                            comments,
+                            user.activity.comments.pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                                prev: true,
+                                next: true,
+                                first: true,
+                                last: true,
+                                ellipsis: true,
+                                boundaryLinks: true,
+                                items: user.activity.comments.pages,
+                                maxButtons: 5,
+                                activePage: this.state.commentsDisplay.activePage,
+                                onSelect: this.handleSelect
+                            })
                         )
                     )
                 );
@@ -43774,9 +43924,5 @@ var UserCabinet = function (_React$Component) {
 }(_react2.default.Component);
 
 exports.UserCabinet = UserCabinet;
-
-//TODO: sorting option
-//TODO: display:none; display:block
-//TODO:passwordchange
 
 },{"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[325]);
