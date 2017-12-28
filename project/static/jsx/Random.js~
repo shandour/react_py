@@ -1,8 +1,0 @@
-import React from 'react'
-
-
-class Random extends React.Component {
-    
-}
-
-export {Random};
