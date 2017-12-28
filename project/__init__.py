@@ -11,9 +11,6 @@ def create_app(settings_module='project.settings'):
     from project.models import db
     db.init_app(app)
 
-    from project.navigation import nav
-    nav.init_app(app)
-
     from project.security import security, user_datastore
     from project.forms import UpgradedRegisterForm
     security.init_app(app, datastore=user_datastore,
