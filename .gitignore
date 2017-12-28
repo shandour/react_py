@@ -1,1 +1,4 @@
-node_modules, yarn-error.log, yarn.lock, bullshit_not_needed.txt, npm-debug.log
+node_modules
+yarn-error.log  
+bullshit_not_needed.txt
+npm-debug.log
