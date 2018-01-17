@@ -53893,6 +53893,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -54018,7 +54020,8 @@ var App = function (_React$Component) {
         _this.guestUser = { 'username': 'guest' };
         _this.state = {
             loggedIn: '',
-            user: _this.guestUser
+            user: _this.guestUser,
+            logInInfoLoaded: false
         };
         _this.handleLogout = _this.handleLogout.bind(_this);
         _this.handleLogin = _this.handleLogin.bind(_this);
@@ -54057,13 +54060,13 @@ var App = function (_React$Component) {
             var req = new Request('/api/is-logged-in/info', { credentials: "same-origin" });
             fetch(req).then(function (resp) {
                 if (!resp.ok) {
-                    _this3.setState({ loggedIn: false });
+                    _this3.setState({ loggedIn: false, logInInfoLoaded: true });
                     throw new Error('Please log in if you want to access all of our functionality');
                 } else {
                     return resp.json();
                 }
             }).then(function (data) {
-                _this3.setState({ loggedIn: true, user: data });
+                _this3.setState({ loggedIn: true, user: data, logInInfoLoaded: true });
             }).catch(function (err) {
                 console.log(err.message);
             });
@@ -54075,6 +54078,7 @@ var App = function (_React$Component) {
 
             var username = this.state.user.username;
 
+            var logInInfoLoaded = this.state.logInInfoLoaded;
 
             return _react2.default.createElement(
                 _reactRouterDom.BrowserRouter,
@@ -54159,15 +54163,19 @@ var App = function (_React$Component) {
                         _react2.default.createElement(
                             _reactBootstrap.Col,
                             { md: 6, mdOffset: 3, id: 'main-content' },
-                            _react2.default.createElement(
+                            logInInfoLoaded ? _react2.default.createElement(
                                 _reactRouterDom.Switch,
                                 null,
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/:bookId([0-9]+)', component: _Book.Book }),
-                                _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/:bookId([0-9]+)/edit', component: _EditBookForm.EditBookForm }),
+                                _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/:bookId([0-9]+)/edit', render: function render(props) {
+                                        return _react2.default.createElement(_EditBookForm.EditBookForm, _extends({}, props, { loggedIn: _this4.state.loggedIn }));
+                                    } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/add', component: _BookAddForm.BookAddForm }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books', component: _Book.Books }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/:authorId([0-9]+)', component: _Author.Author }),
-                                _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/:authorId([0-9]+)/edit', component: _EditAuthorForm.EditAuthorForm }),
+                                _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/:authorId([0-9]+)/edit', render: function render(props) {
+                                        return _react2.default.createElement(_EditAuthorForm.EditAuthorForm, _extends({}, props, { loggedIn: _this4.state.loggedIn }));
+                                    } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/add', render: function render() {
                                         return _react2.default.createElement(_AuthorAddForm.AuthorAddForm, { loggedIn: _this4.state.loggedIn });
                                     } }),
@@ -54186,6 +54194,10 @@ var App = function (_React$Component) {
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/user/cabinet', component: _UserCabinet.UserCabinet }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: Home }),
                                 _react2.default.createElement(_reactRouterDom.Route, { path: '*', component: _Code404Error.Code404Error })
+                            ) : _react2.default.createElement(
+                                'h2',
+                                null,
+                                'Confirming your identity. Please wait...'
                             )
                         ),
                         _react2.default.createElement(
@@ -54764,7 +54776,7 @@ var AuthorAddForm = function (_React$Component) {
             var _this3 = this;
 
             if (!this.props.loggedIn) {
-                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/smooth-login' });
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
             }
             var successStatus = this.state.errors.success ? true : false;
             var n = this.state.booksCounter;
@@ -55519,7 +55531,7 @@ var Comment = function (_React$Component) {
                 return;
             }
             if (!this.state.beingEdited) {
-                var req = new Request('/api/can_user_edit/' + this.props.entityType + '/' + this.props.commentInfo.id, { credentials: "same-origin" });
+                var req = new Request('/api/can-user-edit/' + this.props.entityType + '/' + this.props.commentInfo.id, { credentials: "same-origin" });
                 fetch(req).then(function (resp) {
                     if (resp.status == 200) {
                         _this3.setState({ beingEdited: true });
@@ -55873,7 +55885,7 @@ var Comments = function (_React$Component2) {
         value: function handleDeleteComment(commentId, commentCount) {
             var _this8 = this;
 
-            var req = new Request('/api/can_user_edit/' + this.props.entityType + '/' + commentId, { credentials: "same-origin" });
+            var req = new Request('/api/can-user-edit/' + this.props.entityType + '/' + commentId, { credentials: "same-origin" });
             fetch(req).then(function (resp) {
                 if (resp.ok) {
                     var _req = new Request('/api/delete-comment/' + _this8.props.entityType + '/' + commentId, { credentials: "same-origin" });
@@ -56102,7 +56114,8 @@ var EditAuthorForm = function (_React$Component) {
             suggestions: [''],
             finished: false,
             amount: 0,
-            errorCode404: false
+            errorCode404: false,
+            unauthorizedWarning: false
         };
         return _this;
     }
@@ -56112,15 +56125,16 @@ var EditAuthorForm = function (_React$Component) {
         value: function componentDidMount() {
             var _this2 = this;
 
-            var req = new Request('/api/is-logged-in', { credentials: 'same-origin' });
+            var req = new Request('/api/can-user-edit-entity?entity=author&id=' + this.props.match.params.authorId, { credentials: 'same-origin' });
             fetch(req).then(function (resp) {
-                if (!resp.ok) {
-                    location.href = '/login';
+                if (resp.status == '403') {
+                    _this2.setState({ unauthorizedWarning: true });
+                    throw '403';
                 } else {
                     fetch('/api/authors/' + _this2.props.match.params.authorId).then(function (resp) {
                         if (resp.status == 404) {
                             _this2.setState({ errorCode404: true });
-                            resolve();
+                            throw '404';
                         }
                         return resp.json();
                     }).then(function (data) {
@@ -56170,7 +56184,9 @@ var EditAuthorForm = function (_React$Component) {
                         });
                     });
                 }
-            });
+            }).catch(function (err) {
+                console.log('An error occured while fetching data from server');
+            });;
         }
     }, {
         key: 'handleDelete',
@@ -56283,16 +56299,29 @@ var EditAuthorForm = function (_React$Component) {
         value: function render() {
             var _this5 = this;
 
+            if (!this.props.loggedIn) {
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
+            }
+
             var _state = this.state,
                 book_tags = _state.book_tags,
                 suggestions = _state.suggestions,
                 successStatus = _state.successStatus,
                 isLoaded = _state.isLoaded,
-                errorCode404 = _state.errorCode404;
+                errorCode404 = _state.errorCode404,
+                unauthorizedWarning = _state.unauthorizedWarning;
+
 
             if (errorCode404) {
                 return _react2.default.createElement(_Code404Error.Code404Error, { location: location });
+            } else if (unauthorizedWarning) {
+                return _react2.default.createElement(
+                    'h2',
+                    null,
+                    'You do not have the permission to edit this'
+                );
             }
+
             var redirectLink = '/authors/' + this.props.match.params.authorId;
             var authorFields = Object.keys(this.state.author).map(function (d) {
                 var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;
@@ -56438,7 +56467,8 @@ var EditBookForm = function (_React$Component) {
             suggestions: [''],
             finished: false,
             amount: 0,
-            errorCode404: false
+            errorCode404: false,
+            unauthorizedWarning: false
         };
         return _this;
     }
@@ -56448,15 +56478,16 @@ var EditBookForm = function (_React$Component) {
         value: function componentDidMount() {
             var _this2 = this;
 
-            var req = new Request('/api/is-logged-in', { credentials: 'same-origin' });
+            var req = new Request('/api/can-user-edit-entity?entity=book&id=' + this.props.match.params.bookId, { credentials: 'same-origin' });
             fetch(req).then(function (resp) {
-                if (!resp.ok) {
-                    location.href = '/login';
+                if (resp.status == '403') {
+                    _this2.setState({ unauthorizedWarning: true });
+                    throw '403';
                 } else {
                     fetch('/api/books/' + _this2.props.match.params.bookId).then(function (resp) {
                         if (resp.status == 404) {
                             _this2.setState({ errorCode404: true });
-                            resolve();
+                            throw '404';
                         }
                         return resp.json();
                     }).then(function (data) {
@@ -56506,6 +56537,8 @@ var EditBookForm = function (_React$Component) {
                         });
                     });
                 }
+            }).catch(function (err) {
+                console.log('An error occured while fetching data from server');
             });
         }
     }, {
@@ -56619,16 +56652,29 @@ var EditBookForm = function (_React$Component) {
         value: function render() {
             var _this5 = this;
 
+            if (!this.props.loggedIn) {
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
+            }
+
             var _state = this.state,
                 author_tags = _state.author_tags,
                 suggestions = _state.suggestions,
                 successStatus = _state.successStatus,
                 isLoaded = _state.isLoaded,
-                errorCode404 = _state.errorCode404;
+                errorCode404 = _state.errorCode404,
+                unauthorizedWarning = _state.unauthorizedWarning;
+
 
             if (errorCode404) {
                 return _react2.default.createElement(_Code404Error.Code404Error, { location: location });
+            } else if (unauthorizedWarning) {
+                return _react2.default.createElement(
+                    'h2',
+                    null,
+                    'You do not have the permission to edit this'
+                );
             }
+
             var redirectLink = '/books/' + this.props.match.params.bookId;
             var bookFields = Object.keys(this.state.book).map(function (d) {
                 var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;
@@ -57714,14 +57760,14 @@ var UserCabinet = function (_React$Component) {
                             _reactBootstrap.ListGroup,
                             null,
                             comments,
-                            user.activity.comments.pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                            user.activity.pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
                                 prev: true,
                                 next: true,
                                 first: true,
                                 last: true,
                                 ellipsis: true,
                                 boundaryLinks: true,
-                                items: user.activity.comments.pages,
+                                items: user.activity.pages,
                                 maxButtons: 5,
                                 activePage: this.state.commentsDisplay.activePage,
                                 onSelect: this.handleSelect

@@ -43658,7 +43658,7 @@ var AuthorAddForm = function (_React$Component) {
             var _this3 = this;
 
             if (!this.props.loggedIn) {
-                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/smooth-login' });
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
             }
             var successStatus = this.state.errors.success ? true : false;
             var n = this.state.booksCounter;

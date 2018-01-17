@@ -58,20 +58,22 @@ class EditBookForm extends React.Component {
             suggestions: [''],
             finished: false,
             amount: 0,
-            errorCode404: false
+            errorCode404: false,
+            unauthorizedWarning: false
         };
     }
 
     componentDidMount () {
-        const req = new Request('/api/is-logged-in', {credentials: 'same-origin'});
+        const req = new Request(`/api/can-user-edit-entity?entity=book&id=${this.props.match.params.bookId}`, {credentials: 'same-origin'});
         fetch(req).then(resp => {
-            if (!resp.ok) {
-                location.href='/login'
+            if (resp.status == '403') {
+                this.setState({unauthorizedWarning: true});
+                throw '403';
             } else {
                 fetch(`/api/books/${this.props.match.params.bookId}`).then(resp => {
                     if (resp.status == 404) {
                         this.setState({errorCode404: true});
-                        resolve();
+                        throw '404';
                     }
                     return resp.json();
                 }).then(data => {
@@ -97,7 +99,7 @@ class EditBookForm extends React.Component {
                     });
                 });
             }
-        });
+        }).catch(err => {console.log('An error occured while fetching data from server')});
     }
 
     handleDelete(i) {
@@ -164,16 +166,25 @@ class EditBookForm extends React.Component {
     }
 
     render () {
+        if (!this.props.loggedIn) {
+            return(<Redirect to='/login'/>);
+        }
+
         const {
             author_tags,
             suggestions,
             successStatus,
             isLoaded,
-            errorCode404
+            errorCode404,
+            unauthorizedWarning
         } = this.state;
+
         if (errorCode404) {
             return (<Code404Error location={location}/>);
+        } else if (unauthorizedWarning) {
+            return (<h2>You do not have the permission to edit this</h2>);
         }
+
         const redirectLink = `/books/${this.props.match.params.bookId}`;
         const bookFields = Object.keys(this.state.book).map((d) => {
             let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;

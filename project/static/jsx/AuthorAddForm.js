@@ -188,7 +188,7 @@ class AuthorAddForm extends React.Component {
 
     render () {
         if (!this.props.loggedIn) {
-            return(<Redirect to='/smooth-login'/>)
+            return(<Redirect to='/login'/>)
         }
         const successStatus = this.state.errors.success ? true: false;
         let n = this.state.booksCounter;

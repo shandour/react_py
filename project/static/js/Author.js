@@ -43564,7 +43564,7 @@ var Comment = function (_React$Component) {
                 return;
             }
             if (!this.state.beingEdited) {
-                var req = new Request('/api/can_user_edit/' + this.props.entityType + '/' + this.props.commentInfo.id, { credentials: "same-origin" });
+                var req = new Request('/api/can-user-edit/' + this.props.entityType + '/' + this.props.commentInfo.id, { credentials: "same-origin" });
                 fetch(req).then(function (resp) {
                     if (resp.status == 200) {
                         _this3.setState({ beingEdited: true });
@@ -43918,7 +43918,7 @@ var Comments = function (_React$Component2) {
         value: function handleDeleteComment(commentId, commentCount) {
             var _this8 = this;
 
-            var req = new Request('/api/can_user_edit/' + this.props.entityType + '/' + commentId, { credentials: "same-origin" });
+            var req = new Request('/api/can-user-edit/' + this.props.entityType + '/' + commentId, { credentials: "same-origin" });
             fetch(req).then(function (resp) {
                 if (resp.ok) {
                     var _req = new Request('/api/delete-comment/' + _this8.props.entityType + '/' + commentId, { credentials: "same-origin" });

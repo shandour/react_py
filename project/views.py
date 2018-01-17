@@ -58,7 +58,8 @@ from project.db_operations import (
     check_if_user_wrote_comment,
     react_to_comment,
     delete_comment as delete_one_comment,
-    sort_user_comments
+    sort_user_comments,
+    check_if_user_can_edit_entity
 )
 
 
@@ -83,7 +84,7 @@ def add_author():
     form = AddAuthorForm(request.form)
 
     if request.method == "POST" and form.validate():
-        add_one_author(form)
+        add_one_author(form, current_user.id)
         return jsonify({'success': 'success'})
     else:
         errors = form.get_dict_errors()
@@ -116,7 +117,7 @@ def add_book():
     form = AddBookForm(request.form)
  
     if request.method == "POST" and form.validate():
-        add_one_book(form)
+        add_one_book(form, current_user.id)
         return jsonify('success')
     else:
         errors = form.errors
@@ -132,6 +133,18 @@ def edit_book(book_id):
     else:
         errors = form.errors
         return jsonify(errors)
+
+@app.route('/api/can-user-edit-entity')
+@login_required
+def can_user_edit_entity():
+    if not (current_user.has_role('admin') or current_user.has_role('editor')):
+        if check_if_user_can_edit_entity(
+                request.args['entity'],
+                request.args['id'],
+                current_user.id):
+            return Response(status='200')
+        return Response(status='403')
+
 
 # * retreive suggestions: if entries more than NUMBER? for each letter 2 most prolific authors
 #     else ALL of them 
@@ -267,7 +280,7 @@ def edit_comment(comment_id, comment_type):
         return jsonify({'errors': form.errors, 'success': False})
 
 #check if user can edit and tell client
-@app.route('/api/can_user_edit/<string:comment_type>/<int:comment_id>')
+@app.route('/api/can-user-edit/<string:comment_type>/<int:comment_id>')
 def can_user_edit(comment_type, comment_id):
     resp = Response()
     if not check_user_identity(comment_id, comment_type):

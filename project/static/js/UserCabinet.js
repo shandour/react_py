@@ -43901,14 +43901,14 @@ var UserCabinet = function (_React$Component) {
                             _reactBootstrap.ListGroup,
                             null,
                             comments,
-                            user.activity.comments.pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                            user.activity.pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
                                 prev: true,
                                 next: true,
                                 first: true,
                                 last: true,
                                 ellipsis: true,
                                 boundaryLinks: true,
-                                items: user.activity.comments.pages,
+                                items: user.activity.pages,
                                 maxButtons: 5,
                                 activePage: this.state.commentsDisplay.activePage,
                                 onSelect: this.handleSelect

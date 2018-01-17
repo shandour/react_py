@@ -89,7 +89,7 @@ def sort_user_comments(sort_dict, user_id=None):
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.likes_count.desc())
     elif sort_dict['sort_option'] == 'most-hated':
-        comments_query = comments_query.filter(comments_type.likes_count > 0)
+        comments_query = comments_query.filter(comments_type.likes_count < 0)
         sort_query = (comments_type.likes_count.asc()
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.likes_count.desc())
@@ -106,20 +106,21 @@ def sort_user_comments(sort_dict, user_id=None):
         if sort_dict['sort_direction'] == 'asc':
             sort_query = (
                 case(
-                    [(AuthorComment.edited.isnot(None),
-                      AuthorComment.edited)],
-                    else_=AuthorComment.created_at).asc())
+                    [(comments_type.edited.isnot(None),
+                      comments_type.edited)],
+                    else_=comments_type.created_at).asc())
         else:
             sort_query = (
                 case(
-                [(AuthorComment.edited.isnot(None),
-                  AuthorComment.edited)],
-                else_=AuthorComment.created_at).desc())
+                [(comments_type.edited.isnot(None),
+                  comments_type.edited)],
+                else_=comments_type.created_at).desc())
     comments_pagination = (comments_query
                 .order_by(sort_query)
                 .paginate(
                     page=int(sort_dict['page']),
-                    per_page=comments_per_page))
+                    per_page=comments_per_page,
+                    error_out=False))
 
     return {
         'comments': [
@@ -169,7 +170,7 @@ def create_anonymous_author():
     db.session.commit()
     return author
 
-def add_book(form):
+def add_book(form, user_id):
     new_book = Book()
     new_book.title = form.title.data
     new_book.text = form.text.data
@@ -190,6 +191,7 @@ def add_book(form):
             new_book.authors.append(author)
             db.session.flush()
             author.book_count = Author.book_count + 1
+    new_book.user = User.query.get_or_404(user_id)
 
     db.session.add(new_book)
     db.session.commit()
@@ -212,7 +214,7 @@ def update_book(book_id, form):
     db.session.commit()
 
 
-def add_author(form):
+def add_author(form, user_id):
     new_author = Author()
     new_author.name = form.first_name.data
     if form.last_name.data:
@@ -228,10 +230,13 @@ def add_author(form):
                 new_book.text = book.content.data
                 if book.overview.data:
                     new_book.description = book.overview.data
+                new_book.user = User.query.get_or_404(user_id)
                 new_author.books.append(new_book)
     # flush to be able to increment book_count on author
     db.session.flush()
     new_author.book_count = Author.book_count + len(new_author.books)
+    new_author.user = User.query.get_or_404(user_id)
+
     db.session.commit()
 
 
@@ -658,3 +663,12 @@ def check_if_user_wrote_comment(user_id, comment_id, comment_type):
         if comment_type.lower() == 'author'
         else user_id == BookComment.query.get(comment_id).user_id
     )
+
+def check_if_user_can_edit_entity(entity_type, entity_id, user_id):
+    if entity_type == 'author':
+        author = Author.query.get_or_404(entity_id)
+        return True if author.user_id == user_id else False
+    elif entity_type == 'book':
+        book = Book.query.get_or_404(entity_id)
+        return True if book.user_id == user_id else False
+    return False

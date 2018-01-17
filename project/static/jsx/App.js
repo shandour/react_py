@@ -86,7 +86,8 @@ class App extends React.Component {
         this.guestUser = {'username': 'guest'};
         this.state = {
             loggedIn: '',
-            user: this.guestUser
+            user: this.guestUser,
+            logInInfoLoaded: false
         };
         this.handleLogout = this.handleLogout.bind(this);
         this.handleLogin = this.handleLogin.bind(this);
@@ -114,18 +115,19 @@ class App extends React.Component {
         let req = new Request('/api/is-logged-in/info', {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (!resp.ok) {
-                this.setState({loggedIn: false});
+                this.setState({loggedIn: false, logInInfoLoaded: true});
                 throw new Error('Please log in if you want to access all of our functionality');
             } else {
                 return resp.json();
             }
         }).then(data => {
-            this.setState({loggedIn: true, user: data});
+            this.setState({loggedIn: true, user: data, logInInfoLoaded: true});
         }).catch(err => {console.log(err.message);});
     }
 
     render() {
         const {username} = this.state.user;
+        const logInInfoLoaded = this.state.logInInfoLoaded;
 
         return (
                 <Router>
@@ -159,15 +161,17 @@ class App extends React.Component {
 
                 <Grid fluid>
                 <Col md={6} mdOffset={3} id='main-content'>
+
+                {logInInfoLoaded ?
                 <Switch>
                 <Route exact path="/books/:bookId([0-9]+)" component={Book}/>
-                <Route exact path="/books/:bookId([0-9]+)/edit" component={EditBookForm}/>
+                <Route exact path="/books/:bookId([0-9]+)/edit" render={props => <EditBookForm {...props} loggedIn={this.state.loggedIn}/>}/>
                 <Route exact path="/books/add" component={BookAddForm}/>
                 <Route exact path="/books" component={Books}/>
 
 
                 <Route exact path="/authors/:authorId([0-9]+)" component={Author}/>
-                <Route exact path="/authors/:authorId([0-9]+)/edit" component={EditAuthorForm}/>
+                <Route exact path="/authors/:authorId([0-9]+)/edit"render={props => <EditAuthorForm {...props} loggedIn={this.state.loggedIn}/>}/>
 
                 <Route exact path="/authors/add" render={() => <AuthorAddForm loggedIn={this.state.loggedIn}/>}/>
 
@@ -190,8 +194,13 @@ class App extends React.Component {
                 <Route exact path="/" component={Home}/>
 
                 <Route path='*' component={Code404Error}/>
-                </Switch>
+                 </Switch>
+                 :
+                 <h2>Confirming your identity. Please wait...</h2>
+                }
+
                 </Col>
+
 
                 <Col md={6} mdOffset={3}>
                 <Panel footer= "&copy; The Alexander literateur group 2017 - ad infinitum">

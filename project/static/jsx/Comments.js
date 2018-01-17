@@ -91,7 +91,7 @@ class Comment extends React.Component {
             return;
         }
         if (!this.state.beingEdited) {
-            let req = new Request(`/api/can_user_edit/${this.props.entityType}/${this.props.commentInfo.id}`, {credentials: "same-origin"});
+            let req = new Request(`/api/can-user-edit/${this.props.entityType}/${this.props.commentInfo.id}`, {credentials: "same-origin"});
             fetch(req).then(resp => {
                 if (resp.status == 200) {
                     this.setState({beingEdited: true});
@@ -312,7 +312,7 @@ class Comments extends React.Component{
 
 
     handleDeleteComment(commentId, commentCount) {
-        let req = new Request(`/api/can_user_edit/${this.props.entityType}/${commentId}`, {credentials: "same-origin"});
+        let req = new Request(`/api/can-user-edit/${this.props.entityType}/${commentId}`, {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (resp.ok) {
                 let req = new Request(`/api/delete-comment/${this.props.entityType}/${commentId}`, {credentials: "same-origin"});

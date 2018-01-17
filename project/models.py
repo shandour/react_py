@@ -27,6 +27,7 @@ class Author(db.Model):
     surname = db.Column(db.String(100))
     description = db.Column(db.Text)
     comments = db.relationship('AuthorComment', backref='author')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     books = db.relationship('Book', secondary=authors_books,
                             backref='authors')
@@ -50,6 +51,7 @@ class Book(db.Model):
     text = db.Column(db.Text)
     description = db.Column(db.Text)
     comments = db.relationship('BookComment', backref='book')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     def __repr__(self):
         return ("<id={id}, title: {title}, description: '{description}"
@@ -129,13 +131,15 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(250), unique=True)
     email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(100))
+    password = db.Column(db.String(130))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime(), default=datetime.now())
     roles = db.relationship('Role', secondary=users_roles,
                             backref='users')
     author_comments = db.relationship('AuthorComment', backref='user')
+    authors_added = db.relationship('Author', backref='user')
     book_comments = db.relationship('BookComment', backref='user')
+    books_added = db.relationship('Book', backref='user')
 
     author_comments_likes = db.relationship('AuthorComment', secondary=author_comments_users_like, backref='users_liked')
     author_comments_dislikes = db.relationship('AuthorComment', secondary=author_comments_users_dislike, backref='users_disliked')

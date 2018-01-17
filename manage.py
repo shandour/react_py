@@ -59,6 +59,16 @@ def add_user(username, email, password, role=None):
     return message
 
 
+@manager.command
+@manager.option('-i', '--iteration_number', dest='iteration_number')
+@manager.option('-u', '--users_number', dest='users_number')
+@manager.option('-c', '--max_comments', dest='max_comments_per_entityt')
+def create_fixtures(iteration_number=100, users_number=10, max_comments_per_entity=100):
+    "Creates fixtures"
+    from create_fixtures import create_fixtures as cf
+    cf(iteration_number, users_number, max_comments_per_entity)
+
+
 manager.add_command('runserver', Server())
 
 if __name__ == '__main__':

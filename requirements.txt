@@ -19,3 +19,4 @@ speaklater==1.3
 SQLAlchemy==1.2.0
 Werkzeug==0.13
 WTForms==2.1
+loremipsum-1.0.5

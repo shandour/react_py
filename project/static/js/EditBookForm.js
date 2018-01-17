@@ -53771,7 +53771,8 @@ var EditBookForm = function (_React$Component) {
             suggestions: [''],
             finished: false,
             amount: 0,
-            errorCode404: false
+            errorCode404: false,
+            unauthorizedWarning: false
         };
         return _this;
     }
@@ -53781,15 +53782,16 @@ var EditBookForm = function (_React$Component) {
         value: function componentDidMount() {
             var _this2 = this;
 
-            var req = new Request('/api/is-logged-in', { credentials: 'same-origin' });
+            var req = new Request('/api/can-user-edit-entity?entity=book&id=' + this.props.match.params.bookId, { credentials: 'same-origin' });
             fetch(req).then(function (resp) {
-                if (!resp.ok) {
-                    location.href = '/login';
+                if (resp.status == '403') {
+                    _this2.setState({ unauthorizedWarning: true });
+                    throw '403';
                 } else {
                     fetch('/api/books/' + _this2.props.match.params.bookId).then(function (resp) {
                         if (resp.status == 404) {
                             _this2.setState({ errorCode404: true });
-                            resolve();
+                            throw '404';
                         }
                         return resp.json();
                     }).then(function (data) {
@@ -53839,6 +53841,8 @@ var EditBookForm = function (_React$Component) {
                         });
                     });
                 }
+            }).catch(function (err) {
+                console.log('An error occured while fetching data from server');
             });
         }
     }, {
@@ -53952,16 +53956,29 @@ var EditBookForm = function (_React$Component) {
         value: function render() {
             var _this5 = this;
 
+            if (!this.props.loggedIn) {
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
+            }
+
             var _state = this.state,
                 author_tags = _state.author_tags,
                 suggestions = _state.suggestions,
                 successStatus = _state.successStatus,
                 isLoaded = _state.isLoaded,
-                errorCode404 = _state.errorCode404;
+                errorCode404 = _state.errorCode404,
+                unauthorizedWarning = _state.unauthorizedWarning;
+
 
             if (errorCode404) {
                 return _react2.default.createElement(_Code404Error.Code404Error, { location: location });
+            } else if (unauthorizedWarning) {
+                return _react2.default.createElement(
+                    'h2',
+                    null,
+                    'You do not have the permission to edit this'
+                );
             }
+
             var redirectLink = '/books/' + this.props.match.params.bookId;
             var bookFields = Object.keys(this.state.book).map(function (d) {
                 var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;

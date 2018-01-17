@@ -301,7 +301,7 @@ class UserCabinet extends React.Component {
                     <Panel>
                     <ListGroup>
                     {comments}
-                {user.activity.comments.pages > 1 &&
+                {user.activity.pages > 1 &&
                  <Pagination
                  prev
                  next
@@ -309,7 +309,7 @@ class UserCabinet extends React.Component {
                  last
                  ellipsis
                  boundaryLinks
-                 items={user.activity.comments.pages}
+                 items={user.activity.pages}
                  maxButtons={5}
                  activePage={this.state.commentsDisplay.activePage}
                  onSelect={this.handleSelect}
