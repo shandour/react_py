@@ -12,10 +12,18 @@ from flask import abort, current_app as app
 from sqlalchemy import func, case
 
 
-def get_all_authors_with_sections():
+def get_all_authors_with_sections(page=1):
     """Returns an OrderedDict of first name letters of corresponding authors"""
+    comments_per_page = app.config['BOOKS_AND_AUTHORS_PAGINATION_PER_PAGE']
     authors = Author.query.order_by(db.asc(Author.surname),
-                                    db.asc(Author.name)).all()
+                                    db.asc(Author.name)).\
+                          paginate(
+                              page=int(page),
+                              per_page=comments_per_page,
+                              error_out=False).items
+    author_count = Author.query.count()
+    all_pages = (1 if author_count <= comments_per_page
+                    else author_count / comments_per_page + 1)
 
     d = OrderedDict()
     for a in authors:
@@ -23,7 +31,11 @@ def get_all_authors_with_sections():
         if first_letter not in d:
             d[first_letter] = []
         d[first_letter].append(dict(id=a.id, name=a.name, surname=a.surname))
-    return d
+
+    authors_dict = {'authors' : d,
+                    'all_pages': all_pages,
+                    'active_page': page}
+    return authors_dict
 
 def get_author_by_id(id=None):
     """Returns an author by id or aborts with 404"""
@@ -98,23 +110,20 @@ def sort_user_comments(sort_dict, user_id=None):
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.created_at.desc())
     elif sort_dict['sort_option'] == 'last-change':
-        comments_query = comments_query.filter(comments_type.edited.isnot(None))
+        comments_query = comments_query.filter(comments_type\
+                                               .edited.isnot(None))
         sort_query = (comments_type.edited.asc()
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.edited.desc())
     elif sort_dict['sort_option'] == 'creation-change':
         if sort_dict['sort_direction'] == 'asc':
-            sort_query = (
-                case(
-                    [(comments_type.edited.isnot(None),
-                      comments_type.edited)],
-                    else_=comments_type.created_at).asc())
+            sort_query = (func.coalesce(
+                AuthorComment.edited,
+                AuthorComment.created_at).asc())
         else:
-            sort_query = (
-                case(
-                [(comments_type.edited.isnot(None),
-                  comments_type.edited)],
-                else_=comments_type.created_at).desc())
+            sort_query = (func.coalesce(
+                AuthorComment.edited,
+                AuthorComment.created_at).desc())
     comments_pagination = (comments_query
                 .order_by(sort_query)
                 .paginate(
@@ -141,9 +150,17 @@ def sort_user_comments(sort_dict, user_id=None):
     }
 
 
-def get_all_books_with_sections():
+def get_all_books_with_sections(page=1):
     """Returns an OrderedDict of first name letters of corresponding books"""
-    books = Book.query.order_by(db.asc(Book.title)).all()
+    comments_per_page = app.config['BOOKS_AND_AUTHORS_PAGINATION_PER_PAGE']
+    books = Book.query.order_by(db.asc(Book.title))\
+            .paginate(
+                page=int(page),
+                per_page=comments_per_page,
+                error_out=False).items
+    book_count = Book.query.count()
+    all_pages = (1 if book_count <= comments_per_page
+                 else book_count / comments_per_page + 1)
 
     d = OrderedDict()
     for b in books:
@@ -159,7 +176,12 @@ def get_all_books_with_sections():
                 for a in b.authors
             ]
         ))
-    return d
+
+    books_dict = {'books' : d,
+                    'all_pages': all_pages,
+                    'active_page': page}
+
+    return books_dict
 
 def create_anonymous_author():
     author = Author(
@@ -244,12 +266,14 @@ def update_author(author_id, form):
     author = Author.query.get(author_id)
     author.name = form.first_name.data
     author.surname = form.last_name.data
-    book_tags = form.book_tags.data.rstrip().split(' ')
+    book_tags = (form.book_tags.data.rstrip().split(' ')
+                 if form.book_tags.data
+                 else [])
     if len(author.books) != len(book_tags):
         author.book_count = Author.book_count + (
             len(book_tags) - len(author.books)
         )
-    author.books = [Book.query.get(n) for n in book_tags]
+    author.books = [Book.query.get(n) for n in book_tags] if book_tags else []
     author.description = form.description.data
     db.session.commit()
 
@@ -313,90 +337,98 @@ def get_random_entity():
 
 #SUGGESTIONS FUNCTIONS
 def suggestions_initial(suggestion_type):
+    initial_suggestions = app.config['INITIAL_SUGGESTIONS_NUMBER']
     if suggestion_type.lower() == 'authors':
         author_number = Author.query.count()
-        if author_number < 20:
+
+        if author_number < initial_suggestions:
             return {
                 'suggestions': [a.surname + ' ' + a.name + ';' + str(a.id)
                                 if a.surname else a.name + ';' + str(a.id)
                                 for a in Author.query.all()],
-                'finished': True,
-                'amount': author_number
+                'finished': True
             }
         else:
             return {
                 'suggestions': [a.surname + ' ' + a.name + ';' + str(a.id)
                                  if a.surname else a.name + ';' + str(a.id)
                                  for a in Author.query.order_by(
-                                    Author.book_count.desc()).limit(50)],
-                'finished': False if author_number > 50 else True,
-                'amount': 50 if author_number >= 50 else author_number
+                                    Author.book_count.desc()).limit(
+                                        initial_suggestions)],
+                'finished': False
             }
     elif suggestion_type.lower() == 'books':
         book_number = Book.query.count()
-        if book_number < 20:
+        if book_number < initial_suggestions:
             return {
                 'suggestions': [b.title + ';' + str(b.id)
                                 for b in Book.query.all()],
-                'finished': True,
-                'amount': book_number
+                'finished': True
             }
         else:
             return {
                 'suggestions': [b.title + ';' + str(b.id)
-                                for b in Book.query.limit(50)],
-                'finished': False if book_number > 50 else True,
-                'amount': 50 if book_number >= 50 else book_number
+                                for b in Book.query.limit(
+                                        initial_suggestions)],
+                'finished': False
             }
 
-def get_suggestions(query, amount, suggestion_type):
+def get_suggestions(query, suggestion_type, amount=None):
+    limited_number = app.config['SUGGESTIONS_PER_QUERY']
     if suggestion_type.lower() == 'authors':
-        author_number = Author.query.count()
-        if author_number < 500:
-            limited_number = None
-            new_amount = author_number - amount
-            finished = True
-        else:
-            limited_number = 500
-            new_amount = (500 + amount
-                          if author_number >= 500 + amount
-                          else author_number - amount)
-            finished = False if author_number >= 500 + amount else True
-        suggestions = db.session.query(Author.id, Author.name, Author.surname)\
-            .filter((Author.name.like('%' + query + '%')) |
-                    (Author.surname.like('%' + query + '%')))\
-            .order_by(Author.book_count.desc())\
-            .offset(amount).limit(limited_number)\
-            .all()
-        return {
-            'suggestions': [a.surname + ' ' + a.name + ';' + str(a.id)
-                            if a.surname else a.name + ';' + str(a.id)
-                            for a in suggestions],
-            'amount': new_amount,
-            'finished': finished
-        }
-    if suggestion_type.lower() == 'books':
-        book_number = Book.query.count()
-        if book_number < 500:
-             limited_number = None
-             new_amount = book_number - amount
-             finished = True
-        else:
-            limited_number = 500
-            new_amount = (500 + amount
-                          if book_number >= 500 + amount
-                          else book_number - amount)
-            finished = False if book_number >= 500 + amount else True
-            suggestions = db.session.query(Book.id, Book.title)\
-                                    .filter(Book.title.like('%' + query + '%'))\
-                                    .offset(amount).limit(limited_number)\
-                                                   .all()
-        return {
-            'suggestions': [b.title + ';' + str(b.id)
-                            for b in suggestions],
-            'amount': new_amount,
-            'finished': finished
-        }
+        Entity = Author
+        suggestions = db.session.query(Entity.id, Entity.name, Entity.surname)
+        if query:
+            suggestions = suggestions.filter((Entity.name_tsvector.match(
+                                                 query + ':*',
+                                                 postgresql_regconfig='simple')
+                                            ) | (Entity.surname.match(
+                                                 query + ':*',
+                                                 postgresql_regconfig='simple')
+                                            ))
+        suggestions = suggestions.order_by(Entity.book_count.desc())
+    else:
+        Entity = Book
+        suggestions = db.session.query(Entity.id, Entity.title)
+        if query:
+            suggestions = suggestions.filter(Entity.title.match(
+                                                query + ':*',
+                                                postgresql_regconfig='simple'))
+    suggestions_count = suggestions.count()
+    suggestions = suggestions.offset(amount).limit(limited_number)
+
+    suggestions_list = suggestions.all()
+    suggestions_dict = {}
+
+    if not suggestions_list:
+        suggestions_dict['suggestions'] = ['not found']
+    elif Entity is Author:
+        suggestions_dict['suggestions'] = (
+            [a.surname + ' ' + a.name + ';' + str(a.id)
+             if a.surname else a.name + ';' + str(a.id)
+             for a in suggestions_list]
+        )
+    else:
+        suggestions_dict['suggestions'] = (
+            [b.title + ';' + str(b.id)
+             for b in suggestions_list]
+        )
+
+    if amount:
+        suggestions_dict['amount'] = (
+            int(amount) + limited_number
+            if suggestions_count >= limited_number
+            else int(amount) + suggestions_count
+        )
+        suggestions_dict['finished'] = (
+            True if suggestions_count <= limited_number + int(amount)
+            else False)
+    else:
+        suggestions_dict['finished'] = (
+            True if suggestions_count <= limited_number
+            else False)
+
+    return suggestions_dict
 
 
 def get_all_author_comments_by_author_id(author_id, user_id=None):
@@ -414,7 +446,9 @@ def get_all_author_comments_by_author_id(author_id, user_id=None):
                 'disliked': False,
                 'current_user_wrote': False
             }
-        for c in AuthorComment.query.join(Author, AuthorComment.author_id==author_id).all()]
+        for c in AuthorComment.query.join(Author,
+                                          AuthorComment\
+                                          .author_id==author_id).all()]
     else:
         user = User.query.get(user_id)
         comments = [
@@ -427,10 +461,13 @@ def get_all_author_comments_by_author_id(author_id, user_id=None):
                 'edited': c.edited,
                 'username': c.user.username,
                 'liked': True if c in user.author_comments_likes else False,
-                'disliked': True if c in user.author_comments_dislikes else False,
+                'disliked': (True if c in user.author_comments_dislikes
+                             else False),
                 'current_user_wrote': True if c.user is user else False
             }
-            for c in AuthorComment.query.join(Author, AuthorComment.author_id==author_id).all()]
+            for c in AuthorComment.query.join(Author,
+                                              AuthorComment\
+                                              .author_id==author_id).all()]
 
     return comments
 
@@ -449,7 +486,8 @@ def get_all_book_comments_by_book_id(book_id, user_id):
                 'disliked': False,
                 'current_user_wrote': False
             }
-        for c in BookComment.query.join(Book, BookComment.book_id==book_id).all()]
+        for c in BookComment.query.join(Book,
+                                        BookComment.book_id==book_id).all()]
     else:
         user = User.query.get(user_id)
         comments = [
@@ -462,10 +500,12 @@ def get_all_book_comments_by_book_id(book_id, user_id):
                 'edited': c.edited,
                 'username': c.user.username,
                 'liked': True if c in user.book_comments_likes else False,
-                'disliked': True if c in user.book_comments_dislikes else False,
+                'disliked': (True if c in user.book_comments_dislikes
+                             else False),
                 'current_user_wrote': True if c.user is user else False
             }
-        for c in BookComment.query.join(Book, BookComment.book_id==book_id).all()]
+        for c in BookComment.query.join(Book,
+                                        BookComment.book_id==book_id).all()]
 
     return comments
 

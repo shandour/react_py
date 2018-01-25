@@ -62,7 +62,7 @@ function CustomField (props) {
 }
 
 
-class MegaLogin extends React.Component {
+class Login extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -179,4 +179,4 @@ class MegaLogin extends React.Component {
 }
 
 
-export {Logout, MegaLogin};
+export {Logout, Login};

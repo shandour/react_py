@@ -65,12 +65,13 @@ from project.db_operations import (
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def super_page(path=None):
+def super_page(path):
     return render_template('index.html')
 
 @app.route('/api/authors')
 def authors():
-    authors = get_all_authors_with_sections()
+    active_page = request.args.get('page')
+    authors = get_all_authors_with_sections(active_page)
     resp = jsonify(authors)
     return resp
 
@@ -103,7 +104,8 @@ def edit_author(author_id):
 
 @app.route('/api/books')
 def books():
-    books = get_all_books_with_sections()
+    active_page = request.args.get('page')
+    books = get_all_books_with_sections(active_page)
     resp = jsonify(books)
     return resp
 
@@ -113,6 +115,7 @@ def show_book(book_id):
     return book
 
 @app.route('/api/books/add', methods=['GET', 'POST'])
+@login_required
 def add_book():
     form = AddBookForm(request.form)
  
@@ -158,9 +161,9 @@ def authors_initial_suggestions():
 
 @app.route('/api/authors-get-suggestions')
 def authors_get_suggestions():
-        current_amount = request.args['amount']
+        current_amount = request.args.get('amount')
         query = request.args['q']
-        new_info = get_suggestions(query, int(current_amount), 'authors')
+        new_info = get_suggestions(query, 'authors', current_amount)
         return jsonify(new_info)
 
 @app.route('/api/books-initial-suggestions')
@@ -170,9 +173,9 @@ def books_initial_suggestions():
 
 @app.route('/api/books-get-suggestions')
 def books_get_suggestions():
-        current_amount = request.args['amount']
+        current_amount = request.args.get('amount')
         query = request.args['q']
-        new_info = get_suggestions(query, int(current_amount), 'books')
+        new_info = get_suggestions(query, 'books', current_amount)
         return jsonify(new_info)
 
 
@@ -211,16 +214,16 @@ def random():
 #COMMENTS functionality
 
 #return all comments
-@app.route('/api/<string:comment_type>/<int:author_id>/comments')
-def comments(comment_type, author_id):
+@app.route('/api/<string:comment_type>/<int:entity_id>/comments')
+def comments(comment_type, entity_id):
     if comment_type not in ['authors', 'books']:
         return
     comments = {}
     user_id = current_user.id if hasattr(current_user, 'id') else None
     comments['comments'] = (
-        get_all_author_comments_by_author_id(author_id, user_id)
+        get_all_author_comments_by_author_id(entity_id, user_id)
         if comment_type == 'authors'
-        else get_all_book_comments_by_book_id(author_id, user_id)
+        else get_all_book_comments_by_book_id(entity_id, user_id)
     )
     comments['authenticated'] = current_user.is_authenticated;
     return jsonify(comments)
@@ -231,7 +234,10 @@ def comments(comment_type, author_id):
 def attitude_on_comment(attitude, comment_type, comment_id):
     if not current_user.is_authenticated:
         return Response(status='403')
-    reaction = react_to_comment(attitude, comment_type, comment_id, current_user.id)
+    reaction = react_to_comment(attitude,
+                                comment_type,
+                                comment_id,
+                                current_user.id)
     return jsonify(reaction)
 
 #delete_comment
@@ -248,7 +254,8 @@ def delete_comment(comment_id, comment_type):
 #add comment
 #login_required
 #AddCommentForm
-@app.route('/api/<string:comment_type>/<int:entity_id>/add-comment', methods=['GET', 'POST'])
+@app.route('/api/<string:comment_type>/<int:entity_id>/add-comment',
+           methods=['GET', 'POST'])
 def add_comment(comment_type, entity_id):
     if not current_user.is_authenticated:
         resp = Response()
@@ -256,7 +263,10 @@ def add_comment(comment_type, entity_id):
         return resp
     form = AddCommentForm(request.form)
     if request.method == 'POST' and form.validate():
-        comment = add_one_comment(form, current_user.id, comment_type[:-1], entity_id)
+        comment = add_one_comment(form,
+                                  current_user.id,
+                                  comment_type[:-1],
+                                  entity_id)
         payload = jsonify({'new_comment': comment, 'success': True})
         return payload
     else:
@@ -264,7 +274,8 @@ def add_comment(comment_type, entity_id):
 
 #edit_comment
 #invoke check_user_identity
-@app.route('/api/edit-comment/<string:comment_type>/<int:comment_id>', methods=['GET', 'POST'])
+@app.route('/api/edit-comment/<string:comment_type>/<int:comment_id>',
+           methods=['GET', 'POST'])
 def edit_comment(comment_id, comment_type):
     if not check_user_identity(comment_id, comment_type):
         errors = {'topic': 'you don\'t have the permission to edit',

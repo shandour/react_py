@@ -43392,7 +43392,7 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.MegaLogin = exports.Logout = undefined;
+exports.Login = exports.Logout = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -43478,13 +43478,13 @@ function CustomField(props) {
     );
 }
 
-var MegaLogin = function (_React$Component2) {
-    _inherits(MegaLogin, _React$Component2);
+var Login = function (_React$Component2) {
+    _inherits(Login, _React$Component2);
 
-    function MegaLogin(props) {
-        _classCallCheck(this, MegaLogin);
+    function Login(props) {
+        _classCallCheck(this, Login);
 
-        var _this3 = _possibleConstructorReturn(this, (MegaLogin.__proto__ || Object.getPrototypeOf(MegaLogin)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (Login.__proto__ || Object.getPrototypeOf(Login)).call(this, props));
 
         _this3.state = {
             successStatus: false,
@@ -43504,7 +43504,7 @@ var MegaLogin = function (_React$Component2) {
         return _this3;
     }
 
-    _createClass(MegaLogin, [{
+    _createClass(Login, [{
         key: 'componentDidMount',
         value: function componentDidMount() {
             var _this4 = this;
@@ -43637,10 +43637,10 @@ var MegaLogin = function (_React$Component2) {
         }
     }]);
 
-    return MegaLogin;
+    return Login;
 }(_react2.default.Component);
 
 exports.Logout = Logout;
-exports.MegaLogin = MegaLogin;
+exports.Login = Login;
 
 },{"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[325]);

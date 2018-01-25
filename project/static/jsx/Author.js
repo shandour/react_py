@@ -9,7 +9,8 @@ import {
     Panel,
     ListGroup,
     ListGroupItem,
-    PageHeader
+    PageHeader,
+    Pagination
 } from 'react-bootstrap'
 
 import {Code404Error} from './Code404Error.js'
@@ -111,23 +112,41 @@ class Author extends React.Component {
 class Authors extends React.Component{
    constructor(props) {
         super(props);
-       this.state = {authors: [], isLoaded: false};
+       this.state = {
+           authors: [],
+           active_page: 1,
+           all_pages: null,
+           isLoaded: false
+       };
+       this.handleSelect = this.handleSelect.bind(this);
     }
 
     componentDidMount() {
-        fetch('/api/authors').then(results => results.json()).then(data => {
+        fetch('/api/authors?page=1').then(results => results.json()).then(data => {
             this.setState({
-                authors: data,
+                authors: data.authors,
+                all_pages: data.all_pages,
                 isLoaded:true
             });
         });
     }
 
+    handleSelect(eventKey) {
+        let req = new Request(`/api/authors?page=${eventKey}`, {credentials: 'same-origin'});
+        fetch(req).then(resp => resp.json()).then(data => {
+            this.setState({
+                authors: data.authors,
+                all_pages: data.all_pages,
+                active_page: data.active_page
+            });
+        }).catch(err => {console.log('Something went wrong while fetching data');});
+    }
+
     render() {
-        let {isLoaded, authors} = this.state
+        let {isLoaded, authors, active_page, all_pages} = this.state;
         if (isLoaded) {
-            let f = authorLinks.bind(this);
-            let e = f(authors);
+            let boundAuthorLinks = authorLinks.bind(this);
+            const sortedAuthors = boundAuthorLinks(authors);
 
             return (
                     <div>
@@ -135,11 +154,25 @@ class Authors extends React.Component{
                     Behold the glorious auctores magni, now not only not names upon the gravestones of paper, but beautifully zombyfied and served e-style!
                 </div>
                     <div>
-                    Do you wish to make a contribution to our authors collection?  <Link to={"/authors/add"}> Please push here!</Link>
+                    Do you wish to make a contribution to our authors collection? <Link to={"/authors/add"}> Please push here!</Link>
                     </div>
                     <div>
-                    {e}
+                    {sortedAuthors}
                 </div>
+                    {all_pages > 1 &&
+                     <Pagination
+                     prev
+                     next
+                     first
+                     last
+                     ellipsis
+                     boundaryLinks
+                     items={all_pages}
+                     maxButtons={5}
+                     activePage={Number(active_page)}
+                     onSelect={this.handleSelect}
+                     />
+                    }
                     </div>
             );
         } else {

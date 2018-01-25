@@ -43489,6 +43489,9 @@ function CustomField(props) {
     );
 }
 
+//paginate comments (here and in db_operations)
+//reset password element / use change password api view
+
 var Comment = function (_React$Component) {
     _inherits(Comment, _React$Component);
 
@@ -44286,7 +44289,13 @@ var Authors = function (_React$Component2) {
 
         var _this3 = _possibleConstructorReturn(this, (Authors.__proto__ || Object.getPrototypeOf(Authors)).call(this, props));
 
-        _this3.state = { authors: [], isLoaded: false };
+        _this3.state = {
+            authors: [],
+            active_page: 1,
+            all_pages: null,
+            isLoaded: false
+        };
+        _this3.handleSelect = _this3.handleSelect.bind(_this3);
         return _this3;
     }
 
@@ -44295,13 +44304,32 @@ var Authors = function (_React$Component2) {
         value: function componentDidMount() {
             var _this4 = this;
 
-            fetch('/api/authors').then(function (results) {
+            fetch('/api/authors?page=1').then(function (results) {
                 return results.json();
             }).then(function (data) {
                 _this4.setState({
-                    authors: data,
+                    authors: data.authors,
+                    all_pages: data.all_pages,
                     isLoaded: true
                 });
+            });
+        }
+    }, {
+        key: 'handleSelect',
+        value: function handleSelect(eventKey) {
+            var _this5 = this;
+
+            var req = new Request('/api/authors?page=' + eventKey, { credentials: 'same-origin' });
+            fetch(req).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                _this5.setState({
+                    authors: data.authors,
+                    all_pages: data.all_pages,
+                    active_page: data.active_page
+                });
+            }).catch(function (err) {
+                console.log('Something went wrong while fetching data');
             });
         }
     }, {
@@ -44309,11 +44337,13 @@ var Authors = function (_React$Component2) {
         value: function render() {
             var _state2 = this.state,
                 isLoaded = _state2.isLoaded,
-                authors = _state2.authors;
+                authors = _state2.authors,
+                active_page = _state2.active_page,
+                all_pages = _state2.all_pages;
 
             if (isLoaded) {
-                var f = authorLinks.bind(this);
-                var e = f(authors);
+                var boundAuthorLinks = authorLinks.bind(this);
+                var sortedAuthors = boundAuthorLinks(authors);
 
                 return _react2.default.createElement(
                     'div',
@@ -44326,7 +44356,7 @@ var Authors = function (_React$Component2) {
                     _react2.default.createElement(
                         'div',
                         null,
-                        'Do you wish to make a contribution to our authors collection?  ',
+                        'Do you wish to make a contribution to our authors collection? ',
                         _react2.default.createElement(
                             _reactRouterDom.Link,
                             { to: "/authors/add" },
@@ -44336,8 +44366,20 @@ var Authors = function (_React$Component2) {
                     _react2.default.createElement(
                         'div',
                         null,
-                        e
-                    )
+                        sortedAuthors
+                    ),
+                    all_pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                        prev: true,
+                        next: true,
+                        first: true,
+                        last: true,
+                        ellipsis: true,
+                        boundaryLinks: true,
+                        items: all_pages,
+                        maxButtons: 5,
+                        activePage: Number(active_page),
+                        onSelect: this.handleSelect
+                    })
                 );
             } else {
                 return _react2.default.createElement(

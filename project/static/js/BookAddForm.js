@@ -53641,6 +53641,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.BookAddForm = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -53654,6 +53656,8 @@ var _reactRouterDom = require('react-router-dom');
 var _reactBootstrap = require('react-bootstrap');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -53697,14 +53701,18 @@ var BookAddForm = function (_React$Component) {
                 title: '',
                 description: '',
                 text: ''
-            }, author_tags: [{ id: 'a', text: 'Anonymous' }], suggestions: ['Anonymous;a'],
-            finished: false,
-            amount: 0 };
+            }, author_tags: [{ id: 'a', name: 'Anonymous' }], suggestions: ['Anonymous;a'],
+            initialFinished: false,
+            intermediateFinished: false,
+            amount: null,
+            lastQuery: null
+        };
         _this.handleDelete = _this.handleDelete.bind(_this);
         _this.handleAddition = _this.handleAddition.bind(_this);
         _this.handleFilterSuggestions = _this.handleFilterSuggestions.bind(_this);
         _this.handleSubmit = _this.handleSubmit.bind(_this);
         _this.handleChange = _this.handleChange.bind(_this);
+        _this.loadMoreSuggestions = _this.loadMoreSuggestions.bind(_this);
         return _this;
     }
 
@@ -53716,7 +53724,51 @@ var BookAddForm = function (_React$Component) {
             fetch("/api/authors-initial-suggestions").then(function (results) {
                 return results.json();
             }).then(function (data) {
-                _this2.setState({ suggestions: data.suggestions, finished: data.finished, amount: data.amount });
+                _this2.setState({
+                    suggestions: data.suggestions,
+                    initialFinished: data.finished
+                });
+            });
+        }
+    }, {
+        key: 'loadMoreSuggestions',
+        value: function loadMoreSuggestions() {
+            var _this3 = this;
+
+            var query = document.getElementsByClassName('ReactTags__tagInputField')[0].value;
+            if (this.state.initialFinished) {
+                return;
+            }
+
+            var amount = void 0;
+            if (query != this.state.lastQuery) {
+                amount = 0;
+            } else if (this.state.intermediateFinished) {
+                return;
+            } else {
+                amount = this.state.amount;
+            }
+
+            fetch('/api/authors-get-suggestions?q=' + query + '&amount=' + amount, { credentials: "same-origin" }).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                var suggestions = amount == 0 ? data.suggestions : [].concat(_toConsumableArray(_this3.state.suggestions), _toConsumableArray(data.suggestions));
+                console.log(typeof suggestions === 'undefined' ? 'undefined' : _typeof(suggestions));
+                if (query.length > 0) {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        intermediateFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                } else {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        initialFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                }
             });
         }
     }, {
@@ -53729,6 +53781,9 @@ var BookAddForm = function (_React$Component) {
     }, {
         key: 'handleAddition',
         value: function handleAddition(tag) {
+            if (tag == '') {
+                return;
+            }
             var tags = this.state.author_tags;
             var suggestions = this.state.suggestions;
             var tag_id = suggestions.filter(function (suggestion) {
@@ -53738,37 +53793,66 @@ var BookAddForm = function (_React$Component) {
 
             tags.push({
                 id: tag_id,
-                text: tag
+                name: tag
             });
             this.setState({ author_tags: tags });
         }
+        //FIX!
+
     }, {
         key: 'handleFilterSuggestions',
         value: function handleFilterSuggestions(inputValue, suggestionsArray) {
-            var _this3 = this;
+            var _this4 = this;
 
             var query = inputValue.toLowerCase();
+            console.log(query);
+            console.log(suggestionsArray);
             var filteredSuggestions = suggestionsArray.filter(function (suggestion) {
                 return suggestion.slice(0, suggestion.lastIndexOf(';')).toLowerCase().includes(query);
             });
+            console.log(filteredSuggestions);
             if (filteredSuggestions.length > 0) {
                 return filteredSuggestions.map(function (suggestion) {
                     return suggestion.slice(0, suggestion.lastIndexOf(';'));
                 });
-            } else if (filteredSuggestions.length == 0 && !this.state.finished && inputValue.length > 1) {
-                fetch('/api/authors-get-suggestions?q=' + inputValue + '&amount=' + this.state.amount, { credentials: "same-origin" }).then(function (results) {
-                    return results.json();
-                }).then(function (data) {
-                    _this3.setState({ suggestions: data.suggestions, finished: data.finished, amount: data.amount });
-                });
-            } else if (filteredSuggestions.length == 0 && this.state.finished) {
+            }
+
+            if (!this.state.initialFinished) {
+                if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1) {
+                    fetch('/api/authors-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                        console.log('setState' + _this4.state.suggestions);
+                    });
+                    console.log('after setState' + this.state.suggestions);
+                    return this.state.suggestions;
+                } else if (filteredSuggestions.length == 0 && this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+                    fetch('/api/authors-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                    });
+                    return this.state.suggestions;
+                } else {
+                    return ['Author not found'];
+                }
+            } else {
                 return ['Author not found'];
             }
         }
     }, {
         key: 'handleSubmit',
         value: function handleSubmit(e) {
-            var _this4 = this;
+            var _this5 = this;
 
             e.preventDefault();
             var bodyObj = Object.assign({}, this.state.book);
@@ -53808,10 +53892,10 @@ var BookAddForm = function (_React$Component) {
                 return resp.json();
             }).then(function (data) {
                 if (data == 'success') {
-                    _this4.setState({ successStatus: true });
+                    _this5.setState({ successStatus: true });
                     return;
                 }
-                _this4.setState({ errors: data });
+                _this5.setState({ errors: data });
             });
         }
     }, {
@@ -53825,7 +53909,11 @@ var BookAddForm = function (_React$Component) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this6 = this;
+
+            if (!this.props.loggedIn) {
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
+            }
 
             var _state = this.state,
                 author_tags = _state.author_tags,
@@ -53834,17 +53922,17 @@ var BookAddForm = function (_React$Component) {
 
 
             var bookFields = Object.keys(this.state.book).map(function (d) {
-                var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;
+                var state = typeof _this6.state.errors[d] !== 'undefined' ? "error" : null;
                 var fieldClass = d == 'text' ? 'textarea' : 'input';
 
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this5.handleChange, validationState: state, componentClass: fieldClass }),
-                    _this5.state.errors && typeof _this5.state.errors[d] !== 'undefined' && _react2.default.createElement(
+                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, componentClass: fieldClass }),
+                    _this6.state.errors && typeof _this6.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
-                        _this5.state.errors[d]
+                        _this6.state.errors[d]
                     )
                 );
             });
@@ -53876,7 +53964,9 @@ var BookAddForm = function (_React$Component) {
                         null,
                         _react2.default.createElement(_reactTagInput.WithContext, {
                             tags: author_tags,
+                            minQueryLength: 1,
                             suggestions: suggestions,
+                            labelField: 'name',
                             handleDelete: this.handleDelete,
                             handleAddition: this.handleAddition,
                             handleFilterSuggestions: this.handleFilterSuggestions
@@ -53885,6 +53975,11 @@ var BookAddForm = function (_React$Component) {
                             _reactBootstrap.HelpBlock,
                             { id: 'author-tags-errors' },
                             this.state.errors['author_tags']
+                        ),
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { className: 'pull-right', onClick: this.loadMoreSuggestions },
+                            'Load suggestions'
                         )
                     ),
                     _react2.default.createElement(_reactBootstrap.FormControl, { type: 'submit', value: 'Submit', id: 'submit-button' })

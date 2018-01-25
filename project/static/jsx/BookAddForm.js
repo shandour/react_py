@@ -13,7 +13,6 @@ import {
     Button
 } from 'react-bootstrap'
 
-
 function CustomField (props) {
     return (
             <FormGroup validationState={props.validationState}>
@@ -43,21 +42,66 @@ class BookAddForm extends React.Component {
                 description: '',
                 text: ''
             }, author_tags: [
-                {id: 'a', text: 'Anonymous'}
+                {id: 'a', name: 'Anonymous'}
             ], suggestions: ['Anonymous;a'],
-            finished: false,
-            amount: 0};
+            initialFinished: false,
+            intermediateFinished: false,
+            amount: null,
+            lastQuery: null
+        };
         this.handleDelete = this.handleDelete.bind(this);
         this.handleAddition = this.handleAddition.bind(this);
         this.handleFilterSuggestions = this.handleFilterSuggestions.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.loadMoreSuggestions = this.loadMoreSuggestions.bind(this);
     }
 
     componentDidMount() {
-        fetch("/api/authors-initial-suggestions").then(results=> {return results.json();}).then(data => { this.setState({suggestions: data.suggestions, finished: data.finished, amount: data.amount});})
+        fetch("/api/authors-initial-suggestions").then(results=> {return results.json();}).then(data => {
+            this.setState({
+                suggestions: data.suggestions,
+                initialFinished: data.finished,
+            });
+        })
     }
 
+    loadMoreSuggestions() {
+        const query = document.getElementsByClassName('ReactTags__tagInputField')[0].value;
+        if (this.state.initialFinished) {
+            return;
+        }
+
+        let amount;
+        if (query != this.state.lastQuery) {
+            amount = 0;
+        } else if (this.state.intermediateFinished) {
+            return;
+        } else {
+            amount = this.state.amount;
+        }
+
+        fetch(`/api/authors-get-suggestions?q=${query}&amount=${amount}`,
+              {credentials: "same-origin"}).then(resp => resp.json()).then(data => {
+                  const suggestions = amount == 0 ? data.suggestions : [...this.state.suggestions, ...data.suggestions];
+                  console.log(typeof suggestions)
+                  if (query.length > 0) {
+                      this.setState({
+                          suggestions: suggestions,
+                          intermediateFinished: data.finished,
+                          amount: data.amount,
+                          lastQuery: query
+                      });
+                  } else {
+                      this.setState({
+                          suggestions: suggestions,
+                          initialFinished: data.finished,
+                          amount: data.amount,
+                          lastQuery: query
+                      });
+                  }
+              });
+    }
 
     handleDelete(i) {
         let tags = this.state.author_tags;
@@ -66,6 +110,9 @@ class BookAddForm extends React.Component {
     }
 
     handleAddition(tag) {
+        if (tag == '') {
+            return;
+        }
         let tags = this.state.author_tags;
         let suggestions = this.state.suggestions;
         let tag_id = suggestions.filter(suggestion => suggestion.startsWith(tag))[0];
@@ -73,19 +120,54 @@ class BookAddForm extends React.Component {
 
         tags.push({
             id: tag_id,
-            text: tag
+            name: tag
         });
         this.setState({author_tags: tags});
     }
-
+//FIX!
     handleFilterSuggestions(inputValue, suggestionsArray) {
         const query = inputValue.toLowerCase();
-        let filteredSuggestions = suggestionsArray.filter(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')).toLowerCase().includes(query));
+        console.log(query)
+        console.log(suggestionsArray)
+        let filteredSuggestions = suggestionsArray.filter(suggestion =>
+                                                          suggestion.slice(0, suggestion.lastIndexOf(';')).
+                                                          toLowerCase().
+                                                          includes(query));
+        console.log(filteredSuggestions)
         if (filteredSuggestions.length > 0) {
             return filteredSuggestions.map(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')));
-        } else if (filteredSuggestions.length == 0 && !this.state.finished && inputValue.length > 1) {
-            fetch(`/api/authors-get-suggestions?q=${inputValue}&amount=${this.state.amount}`, {credentials: "same-origin"}).then(results=> {return results.json();}).then(data => { this.setState({suggestions: data.suggestions, finished: data.finished, amount: data.amount});})
-        } else if (filteredSuggestions.length == 0 && this.state.finished) {
+        }
+
+        if (!this.state.initialFinished) {
+            if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1)
+            {
+                fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                    results => results.json()
+                ).then(data => {
+                    this.setState({
+                        suggestions: data.suggestions,
+                        intermediateFinished: data.finished,
+                        lastQuery: query
+                    });
+                    console.log('setState' + this.state.suggestions)
+                });
+                console.log('after setState' + this.state.suggestions)
+                return this.state.suggestions;
+            } else if (filteredSuggestions.length == 0 && this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+                fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                    results => results.json()
+                ).then(data => {
+                    this.setState({
+                        suggestions: data.suggestions,
+                        intermediateFinished: data.finished,
+                        lastQuery: query
+                    });
+                });
+                return this.state.suggestions;
+            } else {
+                return ['Author not found']
+            }
+        } else {
             return ['Author not found']
         }
     }
@@ -120,6 +202,10 @@ class BookAddForm extends React.Component {
     }
 
     render() {
+        if (!this.props.loggedIn) {
+            return <Redirect to='/login'/>;
+        }
+
         const {author_tags, suggestions, successStatus} = this.state;
 
         const bookFields = Object.keys(this.state.book).map((d) => {
@@ -152,7 +238,9 @@ class BookAddForm extends React.Component {
                 <div>
                 <ReactTags
             tags={author_tags}
+            minQueryLength={1}
             suggestions={suggestions}
+            labelField={'name'}
             handleDelete={this.handleDelete}
             handleAddition={this.handleAddition}
             handleFilterSuggestions={this.handleFilterSuggestions}
@@ -160,6 +248,7 @@ class BookAddForm extends React.Component {
                 {(this.state.errors && typeof this.state.errors['author_tags'] !== 'undefined') &&
                  <HelpBlock id='author-tags-errors'>{this.state.errors['author_tags']}</HelpBlock>
                 }
+                <Button className='pull-right' onClick={this.loadMoreSuggestions}>Load suggestions</Button>
                 </div>
 
                 <FormControl type="submit" value='Submit' id="submit-button"/>

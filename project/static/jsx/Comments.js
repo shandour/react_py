@@ -31,6 +31,8 @@ function CustomField (props) {
     );
 }
 
+//paginate comments (here and in db_operations)
+//reset password element / use change password api view
 
 class Comment extends React.Component {
     constructor(props) {

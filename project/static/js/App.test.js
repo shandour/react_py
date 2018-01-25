@@ -54170,14 +54170,16 @@ var App = function (_React$Component) {
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/:bookId([0-9]+)/edit', render: function render(props) {
                                         return _react2.default.createElement(_EditBookForm.EditBookForm, _extends({}, props, { loggedIn: _this4.state.loggedIn }));
                                     } }),
-                                _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/add', component: _BookAddForm.BookAddForm }),
+                                _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books/add', render: function render(props) {
+                                        return _react2.default.createElement(_BookAddForm.BookAddForm, _extends({}, props, { loggedIn: _this4.state.loggedIn }));
+                                    } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/books', component: _Book.Books }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/:authorId([0-9]+)', component: _Author.Author }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/:authorId([0-9]+)/edit', render: function render(props) {
                                         return _react2.default.createElement(_EditAuthorForm.EditAuthorForm, _extends({}, props, { loggedIn: _this4.state.loggedIn }));
                                     } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors/add', render: function render() {
-                                        return _react2.default.createElement(_AuthorAddForm.AuthorAddForm, { loggedIn: _this4.state.loggedIn });
+                                        return _react2.default.createElement(_AuthorAddForm.AuthorAddForm, _extends({}, props, { loggedIn: _this4.state.loggedIn }));
                                     } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/authors', component: _Author.Authors }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/about', component: About }),
@@ -54186,7 +54188,7 @@ var App = function (_React$Component) {
                                         return _react2.default.createElement(_LoginLogoutHelpers.Logout, { logout: _this4.handleLogout });
                                     } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/login', render: function render() {
-                                        return _react2.default.createElement(_LoginLogoutHelpers.MegaLogin, { handleLogin: _this4.handleLogin });
+                                        return _react2.default.createElement(_LoginLogoutHelpers.Login, { handleLogin: _this4.handleLogin });
                                     } }),
                                 _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/register', render: function render() {
                                         return _react2.default.createElement(_RegisterUser.RegisterUser, { handleLogin: _this4.handleLogin });
@@ -54435,7 +54437,13 @@ var Authors = function (_React$Component2) {
 
         var _this3 = _possibleConstructorReturn(this, (Authors.__proto__ || Object.getPrototypeOf(Authors)).call(this, props));
 
-        _this3.state = { authors: [], isLoaded: false };
+        _this3.state = {
+            authors: [],
+            active_page: 1,
+            all_pages: null,
+            isLoaded: false
+        };
+        _this3.handleSelect = _this3.handleSelect.bind(_this3);
         return _this3;
     }
 
@@ -54444,13 +54452,32 @@ var Authors = function (_React$Component2) {
         value: function componentDidMount() {
             var _this4 = this;
 
-            fetch('/api/authors').then(function (results) {
+            fetch('/api/authors?page=1').then(function (results) {
                 return results.json();
             }).then(function (data) {
                 _this4.setState({
-                    authors: data,
+                    authors: data.authors,
+                    all_pages: data.all_pages,
                     isLoaded: true
                 });
+            });
+        }
+    }, {
+        key: 'handleSelect',
+        value: function handleSelect(eventKey) {
+            var _this5 = this;
+
+            var req = new Request('/api/authors?page=' + eventKey, { credentials: 'same-origin' });
+            fetch(req).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                _this5.setState({
+                    authors: data.authors,
+                    all_pages: data.all_pages,
+                    active_page: data.active_page
+                });
+            }).catch(function (err) {
+                console.log('Something went wrong while fetching data');
             });
         }
     }, {
@@ -54458,11 +54485,13 @@ var Authors = function (_React$Component2) {
         value: function render() {
             var _state2 = this.state,
                 isLoaded = _state2.isLoaded,
-                authors = _state2.authors;
+                authors = _state2.authors,
+                active_page = _state2.active_page,
+                all_pages = _state2.all_pages;
 
             if (isLoaded) {
-                var f = authorLinks.bind(this);
-                var e = f(authors);
+                var boundAuthorLinks = authorLinks.bind(this);
+                var sortedAuthors = boundAuthorLinks(authors);
 
                 return _react2.default.createElement(
                     'div',
@@ -54475,7 +54504,7 @@ var Authors = function (_React$Component2) {
                     _react2.default.createElement(
                         'div',
                         null,
-                        'Do you wish to make a contribution to our authors collection?  ',
+                        'Do you wish to make a contribution to our authors collection? ',
                         _react2.default.createElement(
                             _reactRouterDom.Link,
                             { to: "/authors/add" },
@@ -54485,8 +54514,20 @@ var Authors = function (_React$Component2) {
                     _react2.default.createElement(
                         'div',
                         null,
-                        e
-                    )
+                        sortedAuthors
+                    ),
+                    all_pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                        prev: true,
+                        next: true,
+                        first: true,
+                        last: true,
+                        ellipsis: true,
+                        boundaryLinks: true,
+                        items: all_pages,
+                        maxButtons: 5,
+                        activePage: Number(active_page),
+                        onSelect: this.handleSelect
+                    })
                 );
             } else {
                 return _react2.default.createElement(
@@ -55034,7 +55075,13 @@ var Books = function (_React$Component2) {
 
         var _this3 = _possibleConstructorReturn(this, (Books.__proto__ || Object.getPrototypeOf(Books)).call(this, props));
 
-        _this3.state = { books: [] };
+        _this3.state = {
+            books: [],
+            active_page: 1,
+            all_pages: null,
+            isLoaded: false
+        };
+        _this3.handleSelect = _this3.handleSelect.bind(_this3);
         return _this3;
     }
 
@@ -55043,41 +55090,85 @@ var Books = function (_React$Component2) {
         value: function componentDidMount() {
             var _this4 = this;
 
-            fetch('/api/books').then(function (results) {
+            fetch('/api/books?page=1').then(function (results) {
                 return results.json();
             }).then(function (data) {
-                _this4.setState({ books: data });
+                _this4.setState({
+                    books: data.books,
+                    all_pages: data.all_pages,
+                    isLoaded: true
+                });
+            });
+        }
+    }, {
+        key: 'handleSelect',
+        value: function handleSelect(eventKey) {
+            var _this5 = this;
+
+            var req = new Request('/api/books?page=' + eventKey, { credentials: 'same-origin' });
+            fetch(req).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                _this5.setState({
+                    books: data.books,
+                    all_pages: data.all_pages,
+                    active_page: data.active_page
+                });
+            }).catch(function (err) {
+                console.log('Something went wrong while fetching data');
             });
         }
     }, {
         key: 'render',
         value: function render() {
-            var f = bookLinks.bind(this);
-            var sortedBooks = f(this.state.books);
+            var _state2 = this.state,
+                isLoaded = _state2.isLoaded,
+                books = _state2.books,
+                active_page = _state2.active_page,
+                all_pages = _state2.all_pages;
 
-            return _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(
+            if (isLoaded) {
+                var boundBookLinks = bookLinks.bind(this);
+                var sortedBooks = boundBookLinks(books);
+
+                return _react2.default.createElement(
                     'div',
                     null,
-                    'Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  ',
                     _react2.default.createElement(
-                        _reactRouterDom.Link,
-                        { to: "/books/add" },
-                        ' Please push here, then!'
-                    )
-                ),
-                sortedBooks.length > 0 ? _react2.default.createElement(
-                    'div',
-                    null,
-                    sortedBooks
-                ) : _react2.default.createElement(
-                    'h1',
+                        'div',
+                        null,
+                        'Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  ',
+                        _react2.default.createElement(
+                            _reactRouterDom.Link,
+                            { to: "/books/add" },
+                            ' Please push here, then!'
+                        )
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        sortedBooks
+                    ),
+                    all_pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                        prev: true,
+                        next: true,
+                        first: true,
+                        last: true,
+                        ellipsis: true,
+                        boundaryLinks: true,
+                        items: all_pages,
+                        maxButtons: 5,
+                        activePage: Number(active_page),
+                        onSelect: this.handleSelect
+                    })
+                );
+            } else {
+                return _react2.default.createElement(
+                    'h3',
                     null,
                     'Loading...'
-                )
-            );
+                );
+            }
         }
     }]);
 
@@ -55095,6 +55186,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.BookAddForm = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -55108,6 +55201,8 @@ var _reactRouterDom = require('react-router-dom');
 var _reactBootstrap = require('react-bootstrap');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -55151,14 +55246,18 @@ var BookAddForm = function (_React$Component) {
                 title: '',
                 description: '',
                 text: ''
-            }, author_tags: [{ id: 'a', text: 'Anonymous' }], suggestions: ['Anonymous;a'],
-            finished: false,
-            amount: 0 };
+            }, author_tags: [{ id: 'a', name: 'Anonymous' }], suggestions: ['Anonymous;a'],
+            initialFinished: false,
+            intermediateFinished: false,
+            amount: null,
+            lastQuery: null
+        };
         _this.handleDelete = _this.handleDelete.bind(_this);
         _this.handleAddition = _this.handleAddition.bind(_this);
         _this.handleFilterSuggestions = _this.handleFilterSuggestions.bind(_this);
         _this.handleSubmit = _this.handleSubmit.bind(_this);
         _this.handleChange = _this.handleChange.bind(_this);
+        _this.loadMoreSuggestions = _this.loadMoreSuggestions.bind(_this);
         return _this;
     }
 
@@ -55170,7 +55269,51 @@ var BookAddForm = function (_React$Component) {
             fetch("/api/authors-initial-suggestions").then(function (results) {
                 return results.json();
             }).then(function (data) {
-                _this2.setState({ suggestions: data.suggestions, finished: data.finished, amount: data.amount });
+                _this2.setState({
+                    suggestions: data.suggestions,
+                    initialFinished: data.finished
+                });
+            });
+        }
+    }, {
+        key: 'loadMoreSuggestions',
+        value: function loadMoreSuggestions() {
+            var _this3 = this;
+
+            var query = document.getElementsByClassName('ReactTags__tagInputField')[0].value;
+            if (this.state.initialFinished) {
+                return;
+            }
+
+            var amount = void 0;
+            if (query != this.state.lastQuery) {
+                amount = 0;
+            } else if (this.state.intermediateFinished) {
+                return;
+            } else {
+                amount = this.state.amount;
+            }
+
+            fetch('/api/authors-get-suggestions?q=' + query + '&amount=' + amount, { credentials: "same-origin" }).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                var suggestions = amount == 0 ? data.suggestions : [].concat(_toConsumableArray(_this3.state.suggestions), _toConsumableArray(data.suggestions));
+                console.log(typeof suggestions === 'undefined' ? 'undefined' : _typeof(suggestions));
+                if (query.length > 0) {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        intermediateFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                } else {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        initialFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                }
             });
         }
     }, {
@@ -55183,6 +55326,9 @@ var BookAddForm = function (_React$Component) {
     }, {
         key: 'handleAddition',
         value: function handleAddition(tag) {
+            if (tag == '') {
+                return;
+            }
             var tags = this.state.author_tags;
             var suggestions = this.state.suggestions;
             var tag_id = suggestions.filter(function (suggestion) {
@@ -55192,37 +55338,66 @@ var BookAddForm = function (_React$Component) {
 
             tags.push({
                 id: tag_id,
-                text: tag
+                name: tag
             });
             this.setState({ author_tags: tags });
         }
+        //FIX!
+
     }, {
         key: 'handleFilterSuggestions',
         value: function handleFilterSuggestions(inputValue, suggestionsArray) {
-            var _this3 = this;
+            var _this4 = this;
 
             var query = inputValue.toLowerCase();
+            console.log(query);
+            console.log(suggestionsArray);
             var filteredSuggestions = suggestionsArray.filter(function (suggestion) {
                 return suggestion.slice(0, suggestion.lastIndexOf(';')).toLowerCase().includes(query);
             });
+            console.log(filteredSuggestions);
             if (filteredSuggestions.length > 0) {
                 return filteredSuggestions.map(function (suggestion) {
                     return suggestion.slice(0, suggestion.lastIndexOf(';'));
                 });
-            } else if (filteredSuggestions.length == 0 && !this.state.finished && inputValue.length > 1) {
-                fetch('/api/authors-get-suggestions?q=' + inputValue + '&amount=' + this.state.amount, { credentials: "same-origin" }).then(function (results) {
-                    return results.json();
-                }).then(function (data) {
-                    _this3.setState({ suggestions: data.suggestions, finished: data.finished, amount: data.amount });
-                });
-            } else if (filteredSuggestions.length == 0 && this.state.finished) {
+            }
+
+            if (!this.state.initialFinished) {
+                if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1) {
+                    fetch('/api/authors-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                        console.log('setState' + _this4.state.suggestions);
+                    });
+                    console.log('after setState' + this.state.suggestions);
+                    return this.state.suggestions;
+                } else if (filteredSuggestions.length == 0 && this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+                    fetch('/api/authors-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                    });
+                    return this.state.suggestions;
+                } else {
+                    return ['Author not found'];
+                }
+            } else {
                 return ['Author not found'];
             }
         }
     }, {
         key: 'handleSubmit',
         value: function handleSubmit(e) {
-            var _this4 = this;
+            var _this5 = this;
 
             e.preventDefault();
             var bodyObj = Object.assign({}, this.state.book);
@@ -55262,10 +55437,10 @@ var BookAddForm = function (_React$Component) {
                 return resp.json();
             }).then(function (data) {
                 if (data == 'success') {
-                    _this4.setState({ successStatus: true });
+                    _this5.setState({ successStatus: true });
                     return;
                 }
-                _this4.setState({ errors: data });
+                _this5.setState({ errors: data });
             });
         }
     }, {
@@ -55279,7 +55454,11 @@ var BookAddForm = function (_React$Component) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this6 = this;
+
+            if (!this.props.loggedIn) {
+                return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
+            }
 
             var _state = this.state,
                 author_tags = _state.author_tags,
@@ -55288,17 +55467,17 @@ var BookAddForm = function (_React$Component) {
 
 
             var bookFields = Object.keys(this.state.book).map(function (d) {
-                var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;
+                var state = typeof _this6.state.errors[d] !== 'undefined' ? "error" : null;
                 var fieldClass = d == 'text' ? 'textarea' : 'input';
 
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this5.handleChange, validationState: state, componentClass: fieldClass }),
-                    _this5.state.errors && typeof _this5.state.errors[d] !== 'undefined' && _react2.default.createElement(
+                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, componentClass: fieldClass }),
+                    _this6.state.errors && typeof _this6.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
-                        _this5.state.errors[d]
+                        _this6.state.errors[d]
                     )
                 );
             });
@@ -55330,7 +55509,9 @@ var BookAddForm = function (_React$Component) {
                         null,
                         _react2.default.createElement(_reactTagInput.WithContext, {
                             tags: author_tags,
+                            minQueryLength: 1,
                             suggestions: suggestions,
+                            labelField: 'name',
                             handleDelete: this.handleDelete,
                             handleAddition: this.handleAddition,
                             handleFilterSuggestions: this.handleFilterSuggestions
@@ -55339,6 +55520,11 @@ var BookAddForm = function (_React$Component) {
                             _reactBootstrap.HelpBlock,
                             { id: 'author-tags-errors' },
                             this.state.errors['author_tags']
+                        ),
+                        _react2.default.createElement(
+                            _reactBootstrap.Button,
+                            { className: 'pull-right', onClick: this.loadMoreSuggestions },
+                            'Load suggestions'
                         )
                     ),
                     _react2.default.createElement(_reactBootstrap.FormControl, { type: 'submit', value: 'Submit', id: 'submit-button' })
@@ -55455,6 +55641,9 @@ function CustomField(props) {
         })
     );
 }
+
+//paginate comments (here and in db_operations)
+//reset password element / use change password api view
 
 var Comment = function (_React$Component) {
     _inherits(Comment, _React$Component);
@@ -56042,6 +56231,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.EditAuthorForm = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -56057,6 +56248,8 @@ var _Code404Error = require('./Code404Error.js');
 var _reactBootstrap = require('react-bootstrap');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -56101,6 +56294,7 @@ var EditAuthorForm = function (_React$Component) {
         _this.handleDelete = _this.handleDelete.bind(_this);
         _this.handleAddition = _this.handleAddition.bind(_this);
         _this.handleFilterSuggestions = _this.handleFilterSuggestions.bind(_this);
+        _this.loadMoreSuggestions = _this.loadMoreSuggestions.bind(_this);
         //empty string within initial suggestions to prevent the rendering from crashing in case the fetch of suggestions is tardy, so that the error props.suggestions is undefined gets thrown!
         _this.state = {
             isLoaded: false,
@@ -56112,7 +56306,9 @@ var EditAuthorForm = function (_React$Component) {
                 description: ""
             }, book_tags: [],
             suggestions: [''],
-            finished: false,
+            initialFinished: false,
+            intermediateFinished: false,
+            lastQuery: '',
             amount: 0,
             errorCode404: false,
             unauthorizedWarning: false
@@ -56177,8 +56373,7 @@ var EditAuthorForm = function (_React$Component) {
                         }).then(function (data) {
                             _this2.setState({
                                 suggestions: data.suggestions,
-                                finished: data.finished,
-                                amount: data.amount,
+                                initialFinished: data.finished,
                                 isLoaded: true
                             });
                         });
@@ -56187,6 +56382,47 @@ var EditAuthorForm = function (_React$Component) {
             }).catch(function (err) {
                 console.log('An error occured while fetching data from server');
             });;
+        }
+    }, {
+        key: 'loadMoreSuggestions',
+        value: function loadMoreSuggestions() {
+            var _this3 = this;
+
+            var query = document.getElementsByClassName('ReactTags__tagInputField')[0].value;
+            if (this.state.initialFinished) {
+                return;
+            }
+
+            var amount = void 0;
+            if (query != this.state.lastQuery) {
+                amount = 0;
+            } else if (this.state.intermediateFinished) {
+                return;
+            } else {
+                amount = this.state.amount;
+            }
+
+            fetch('/api/books-get-suggestions?q=' + query + '&amount=' + amount, { credentials: "same-origin" }).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                var suggestions = amount == 0 ? data.suggestions : [].concat(_toConsumableArray(_this3.state.suggestions), _toConsumableArray(data.suggestions));
+                console.log(typeof suggestions === 'undefined' ? 'undefined' : _typeof(suggestions));
+                if (query.length > 0) {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        intermediateFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                } else {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        initialFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                }
+            });
         }
     }, {
         key: 'handleDelete',
@@ -56217,30 +56453,55 @@ var EditAuthorForm = function (_React$Component) {
     }, {
         key: 'handleFilterSuggestions',
         value: function handleFilterSuggestions(inputValue, suggestionsArray) {
-            var _this3 = this;
+            var _this4 = this;
 
             var query = inputValue.toLowerCase();
+            console.log(query);
+            console.log(suggestionsArray);
             var filteredSuggestions = suggestionsArray.filter(function (suggestion) {
                 return suggestion.slice(0, suggestion.lastIndexOf(';')).toLowerCase().includes(query);
             });
+            console.log(filteredSuggestions);
             if (filteredSuggestions.length > 0) {
                 return filteredSuggestions.map(function (suggestion) {
                     return suggestion.slice(0, suggestion.lastIndexOf(';'));
                 });
-            } else if (filteredSuggestions.length == 0 && !this.state.finished && inputValue.length > 1) {
-                fetch('/api/books-get-suggestions?q=' + inputValue + '&amount=' + this.state.amount, { credentials: "same-origin" }).then(function (results) {
-                    return results.json();
-                }).then(function (data) {
-                    _this3.setState({ suggestions: data.suggestions, finished: data.finished, amount: data.amount });
-                });
-            } else if (filteredSuggestions.length == 0 && this.state.finished) {
+            }
+
+            if (!this.state.initialFinished) {
+                if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1) {
+                    fetch('/api/books-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                    });
+                    return this.state.suggestions;
+                } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+                    fetch('/api/books-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                    });
+                    return this.state.suggestions;
+                } else {
+                    return ['Author not found'];
+                }
+            } else {
                 return ['Book not found'];
             }
         }
     }, {
         key: 'handleSubmit',
         value: function handleSubmit(e) {
-            var _this4 = this;
+            var _this5 = this;
 
             e.preventDefault();
             var bodyObj = Object.assign({}, this.state.author);
@@ -56280,10 +56541,10 @@ var EditAuthorForm = function (_React$Component) {
                 return resp.json();
             }).then(function (data) {
                 if (data == 'success') {
-                    _this4.setState({ successStatus: true });
+                    _this5.setState({ successStatus: true });
                     return;
                 }
-                _this4.setState({ errors: data });
+                _this5.setState({ errors: data });
             });
         }
     }, {
@@ -56297,7 +56558,7 @@ var EditAuthorForm = function (_React$Component) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this6 = this;
 
             if (!this.props.loggedIn) {
                 return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
@@ -56324,15 +56585,15 @@ var EditAuthorForm = function (_React$Component) {
 
             var redirectLink = '/authors/' + this.props.match.params.authorId;
             var authorFields = Object.keys(this.state.author).map(function (d) {
-                var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;
+                var state = typeof _this6.state.errors[d] !== 'undefined' ? "error" : null;
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this5.handleChange, validationState: state, value: _this5.state.author[d] }),
-                    _this5.state.errors && typeof _this5.state.errors[d] !== 'undefined' && _react2.default.createElement(
+                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, value: _this6.state.author[d] }),
+                    _this6.state.errors && typeof _this6.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
-                        _this5.state.errors[d]
+                        _this6.state.errors[d]
                     )
                 );
             });
@@ -56366,6 +56627,11 @@ var EditAuthorForm = function (_React$Component) {
                                 _reactBootstrap.HelpBlock,
                                 { id: 'book-tags-errors' },
                                 this.state.errors['book_tags']
+                            ),
+                            _react2.default.createElement(
+                                _reactBootstrap.Button,
+                                { className: 'pull-right', onClick: this.loadMoreSuggestions },
+                                'Load suggestions'
                             )
                         ),
                         _react2.default.createElement(_reactBootstrap.FormControl, { type: 'submit', value: 'Submit', id: 'submit-button' })
@@ -56395,6 +56661,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.EditBookForm = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -56410,6 +56678,8 @@ var _Code404Error = require('./Code404Error.js');
 var _reactBootstrap = require('react-bootstrap');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -56454,6 +56724,7 @@ var EditBookForm = function (_React$Component) {
         _this.handleDelete = _this.handleDelete.bind(_this);
         _this.handleAddition = _this.handleAddition.bind(_this);
         _this.handleFilterSuggestions = _this.handleFilterSuggestions.bind(_this);
+        _this.loadMoreSuggestions = _this.loadMoreSuggestions.bind(_this);
         //empty string within initial suggestions to prevent the rendering from crashing in case the fetch of suggestions is tardy, so that the error props.suggestions is undefined gets thrown!
         _this.state = {
             isLoaded: false,
@@ -56465,8 +56736,10 @@ var EditBookForm = function (_React$Component) {
                 text: ""
             }, author_tags: [],
             suggestions: [''],
-            finished: false,
-            amount: 0,
+            initialFinished: false,
+            intermediateFinished: false,
+            amount: null,
+            lastQuery: null,
             errorCode404: false,
             unauthorizedWarning: false
         };
@@ -56530,8 +56803,7 @@ var EditBookForm = function (_React$Component) {
                         }).then(function (data) {
                             _this2.setState({
                                 suggestions: data.suggestions,
-                                finished: data.finished,
-                                amount: data.amount,
+                                initialFinished: data.finished,
                                 isLoaded: true
                             });
                         });
@@ -56539,6 +56811,47 @@ var EditBookForm = function (_React$Component) {
                 }
             }).catch(function (err) {
                 console.log('An error occured while fetching data from server');
+            });
+        }
+    }, {
+        key: 'loadMoreSuggestions',
+        value: function loadMoreSuggestions() {
+            var _this3 = this;
+
+            var query = document.getElementsByClassName('ReactTags__tagInputField')[0].value;
+            if (this.state.initialFinished) {
+                return;
+            }
+
+            var amount = void 0;
+            if (query != this.state.lastQuery) {
+                amount = 0;
+            } else if (this.state.intermediateFinished) {
+                return;
+            } else {
+                amount = this.state.amount;
+            }
+
+            fetch('/api/authors-get-suggestions?q=' + query + '&amount=' + amount, { credentials: "same-origin" }).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                var suggestions = amount == 0 ? data.suggestions : [].concat(_toConsumableArray(_this3.state.suggestions), _toConsumableArray(data.suggestions));
+                console.log(typeof suggestions === 'undefined' ? 'undefined' : _typeof(suggestions));
+                if (query.length > 0) {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        intermediateFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                } else {
+                    _this3.setState({
+                        suggestions: suggestions,
+                        initialFinished: data.finished,
+                        amount: data.amount,
+                        lastQuery: query
+                    });
+                }
             });
         }
     }, {
@@ -56570,30 +56883,55 @@ var EditBookForm = function (_React$Component) {
     }, {
         key: 'handleFilterSuggestions',
         value: function handleFilterSuggestions(inputValue, suggestionsArray) {
-            var _this3 = this;
+            var _this4 = this;
 
             var query = inputValue.toLowerCase();
+            console.log(query);
+            console.log(suggestionsArray);
             var filteredSuggestions = suggestionsArray.filter(function (suggestion) {
                 return suggestion.slice(0, suggestion.lastIndexOf(';')).toLowerCase().includes(query);
             });
+            console.log(filteredSuggestions);
             if (filteredSuggestions.length > 0) {
                 return filteredSuggestions.map(function (suggestion) {
                     return suggestion.slice(0, suggestion.lastIndexOf(';'));
                 });
-            } else if (filteredSuggestions.length == 0 && !this.state.finished && inputValue.length > 1) {
-                fetch('/api/authors-get-suggestions?q=' + inputValue + '&amount=' + this.state.amount, { credentials: "same-origin" }).then(function (results) {
-                    return results.json();
-                }).then(function (data) {
-                    _this3.setState({ suggestions: data.suggestions, finished: data.finished, amount: data.amount });
-                });
-            } else if (filteredSuggestions.length == 0 && this.state.finished) {
+            }
+
+            if (!this.state.initialFinished) {
+                if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1) {
+                    fetch('/api/authors-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                    });
+                    return this.state.suggestions;
+                } else if (filteredSuggestions.length == 0 && this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+                    fetch('/api/authors-get-suggestions?q=' + query, { credentials: "same-origin" }).then(function (results) {
+                        return results.json();
+                    }).then(function (data) {
+                        _this4.setState({
+                            suggestions: data.suggestions,
+                            intermediateFinished: data.finished,
+                            lastQuery: query
+                        });
+                    });
+                    return this.state.suggestions;
+                } else {
+                    return ['Author not found'];
+                }
+            } else {
                 return ['Author not found'];
             }
         }
     }, {
         key: 'handleSubmit',
         value: function handleSubmit(e) {
-            var _this4 = this;
+            var _this5 = this;
 
             e.preventDefault();
             var bodyObj = Object.assign({}, this.state.book);
@@ -56633,10 +56971,10 @@ var EditBookForm = function (_React$Component) {
                 return resp.json();
             }).then(function (data) {
                 if (data == 'success') {
-                    _this4.setState({ successStatus: true });
+                    _this5.setState({ successStatus: true });
                     return;
                 }
-                _this4.setState({ errors: data });
+                _this5.setState({ errors: data });
             });
         }
     }, {
@@ -56650,7 +56988,7 @@ var EditBookForm = function (_React$Component) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this6 = this;
 
             if (!this.props.loggedIn) {
                 return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/login' });
@@ -56677,17 +57015,17 @@ var EditBookForm = function (_React$Component) {
 
             var redirectLink = '/books/' + this.props.match.params.bookId;
             var bookFields = Object.keys(this.state.book).map(function (d) {
-                var state = typeof _this5.state.errors[d] !== 'undefined' ? "error" : null;
+                var state = typeof _this6.state.errors[d] !== 'undefined' ? "error" : null;
                 var fieldClass = d == 'text' ? 'textarea' : 'input';
 
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this5.handleChange, validationState: state, value: _this5.state.book[d], componentClass: fieldClass }),
-                    _this5.state.errors && typeof _this5.state.errors[d] !== 'undefined' && _react2.default.createElement(
+                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, value: _this6.state.book[d], componentClass: fieldClass }),
+                    _this6.state.errors && typeof _this6.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
-                        _this5.state.errors[d]
+                        _this6.state.errors[d]
                     )
                 );
             });
@@ -56710,6 +57048,7 @@ var EditBookForm = function (_React$Component) {
                             null,
                             _react2.default.createElement(_reactTagInput.WithContext, {
                                 tags: author_tags,
+                                minQueryLength: 1,
                                 suggestions: suggestions,
                                 labelField: 'name',
                                 handleDelete: this.handleDelete,
@@ -56720,6 +57059,11 @@ var EditBookForm = function (_React$Component) {
                                 _reactBootstrap.HelpBlock,
                                 { id: 'author-tags-errors' },
                                 this.state.errors['author_tags']
+                            ),
+                            _react2.default.createElement(
+                                _reactBootstrap.Button,
+                                { className: 'pull-right', onClick: this.loadMoreSuggestions },
+                                'Load suggestions'
                             )
                         ),
                         _react2.default.createElement(_reactBootstrap.FormControl, { type: 'submit', value: 'Submit', id: 'submit-button' })
@@ -56747,7 +57091,7 @@ exports.EditBookForm = EditBookForm;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.MegaLogin = exports.Logout = undefined;
+exports.Login = exports.Logout = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -56833,13 +57177,13 @@ function CustomField(props) {
     );
 }
 
-var MegaLogin = function (_React$Component2) {
-    _inherits(MegaLogin, _React$Component2);
+var Login = function (_React$Component2) {
+    _inherits(Login, _React$Component2);
 
-    function MegaLogin(props) {
-        _classCallCheck(this, MegaLogin);
+    function Login(props) {
+        _classCallCheck(this, Login);
 
-        var _this3 = _possibleConstructorReturn(this, (MegaLogin.__proto__ || Object.getPrototypeOf(MegaLogin)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (Login.__proto__ || Object.getPrototypeOf(Login)).call(this, props));
 
         _this3.state = {
             successStatus: false,
@@ -56859,7 +57203,7 @@ var MegaLogin = function (_React$Component2) {
         return _this3;
     }
 
-    _createClass(MegaLogin, [{
+    _createClass(Login, [{
         key: 'componentDidMount',
         value: function componentDidMount() {
             var _this4 = this;
@@ -56992,11 +57336,11 @@ var MegaLogin = function (_React$Component2) {
         }
     }]);
 
-    return MegaLogin;
+    return Login;
 }(_react2.default.Component);
 
 exports.Logout = Logout;
-exports.MegaLogin = MegaLogin;
+exports.Login = Login;
 
 },{"react":529,"react-bootstrap":440,"react-router-dom":512}],550:[function(require,module,exports){
 'use strict';

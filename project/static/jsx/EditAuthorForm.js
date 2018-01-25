@@ -45,6 +45,7 @@ class EditAuthorForm extends React.Component {
         this.handleDelete = this.handleDelete.bind(this);
         this.handleAddition = this.handleAddition.bind(this);
         this.handleFilterSuggestions = this.handleFilterSuggestions.bind(this);
+        this.loadMoreSuggestions = this.loadMoreSuggestions.bind(this);
 //empty string within initial suggestions to prevent the rendering from crashing in case the fetch of suggestions is tardy, so that the error props.suggestions is undefined gets thrown!
         this.state = {
             isLoaded: false,
@@ -56,7 +57,9 @@ class EditAuthorForm extends React.Component {
                 description: ""
             }, book_tags: [],
             suggestions: [''],
-            finished: false,
+            initialFinished: false,
+            intermediateFinished: false,
+            lastQuery: '',
             amount: 0,
             errorCode404: false,
             unauthorizedWarning: false
@@ -92,14 +95,50 @@ class EditAuthorForm extends React.Component {
                     fetch("/api/books-initial-suggestions").then(results => results.json()).then(data => {
                         this.setState({
                             suggestions: data.suggestions,
-                            finished: data.finished,
-                            amount: data.amount,
+                            initialFinished: data.finished,
                             isLoaded: true
                         });
                     });
                 });
             }
         }).catch(err => {console.log('An error occured while fetching data from server')});;
+    }
+
+    loadMoreSuggestions() {
+        const query = document.getElementsByClassName('ReactTags__tagInputField')[0].value;
+        if (this.state.initialFinished) {
+            return;
+        }
+
+        let amount;
+        if (query != this.state.lastQuery) {
+            amount = 0;
+        } else if (this.state.intermediateFinished) {
+            return;
+        } else {
+            amount = this.state.amount;
+        }
+
+        fetch(`/api/books-get-suggestions?q=${query}&amount=${amount}`,
+              {credentials: "same-origin"}).then(resp => resp.json()).then(data => {
+                  const suggestions = amount == 0 ? data.suggestions : [...this.state.suggestions, ...data.suggestions];
+                  console.log(typeof suggestions)
+                  if (query.length > 0) {
+                      this.setState({
+                          suggestions: suggestions,
+                          intermediateFinished: data.finished,
+                          amount: data.amount,
+                          lastQuery: query
+                      });
+                  } else {
+                      this.setState({
+                          suggestions: suggestions,
+                          initialFinished: data.finished,
+                          amount: data.amount,
+                          lastQuery: query
+                      });
+                  }
+              });
     }
 
     handleDelete(i) {
@@ -126,12 +165,45 @@ class EditAuthorForm extends React.Component {
 
     handleFilterSuggestions(inputValue, suggestionsArray) {
         const query = inputValue.toLowerCase();
-        let filteredSuggestions = suggestionsArray.filter(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')).toLowerCase().includes(query));
+        console.log(query)
+        console.log(suggestionsArray)
+        let filteredSuggestions = suggestionsArray.filter(suggestion =>
+                                                          suggestion.slice(0, suggestion.lastIndexOf(';')).
+                                                          toLowerCase().
+                                                          includes(query));
+        console.log(filteredSuggestions)
         if (filteredSuggestions.length > 0) {
             return filteredSuggestions.map(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')));
-        } else if (filteredSuggestions.length == 0 && !this.state.finished && inputValue.length > 1) {
-            fetch(`/api/books-get-suggestions?q=${inputValue}&amount=${this.state.amount}`, {credentials: "same-origin"}).then(results=> {return results.json();}).then(data => { this.setState({suggestions: data.suggestions, finished: data.finished, amount: data.amount});})
-        } else if (filteredSuggestions.length == 0 && this.state.finished) {
+        }
+
+        if (!this.state.initialFinished) {
+            if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1)
+            {
+                fetch(`/api/books-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                    results => results.json()
+                ).then(data => {
+                    this.setState({
+                        suggestions: data.suggestions,
+                        intermediateFinished: data.finished,
+                        lastQuery: query
+                    });
+                });
+                return this.state.suggestions;
+            } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+                fetch(`/api/books-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                    results => results.json()
+                ).then(data => {
+                    this.setState({
+                        suggestions: data.suggestions,
+                        intermediateFinished: data.finished,
+                        lastQuery: query
+                    });
+                });
+                return this.state.suggestions;
+            } else {
+                return ['Author not found']
+            }
+        } else {
             return ['Book not found']
         }
     }
@@ -222,6 +294,7 @@ class EditAuthorForm extends React.Component {
                     {(this.state.errors && typeof this.state.errors['book_tags'] !== 'undefined') &&
                      <HelpBlock id='book-tags-errors'>{this.state.errors['book_tags']}</HelpBlock>
                     }
+                    <Button className='pull-right' onClick={this.loadMoreSuggestions}>Load suggestions</Button>
                 </div>
 
                     <FormControl type="submit" value='Submit' id="submit-button"/>

@@ -40200,6 +40200,9 @@ function CustomField(props) {
     );
 }
 
+//paginate comments (here and in db_operations)
+//reset password element / use change password api view
+
 var Comment = function (_React$Component) {
     _inherits(Comment, _React$Component);
 

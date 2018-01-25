@@ -39,7 +39,7 @@ import {Random} from './Random.js';
 
 import {Code404Error} from './Code404Error.js';
 
-import {Logout, MegaLogin} from './LoginLogoutHelpers.js';
+import {Logout, Login} from './LoginLogoutHelpers.js';
 
 import {RegisterUser} from './RegisterUser.js';
 
@@ -166,26 +166,23 @@ class App extends React.Component {
                 <Switch>
                 <Route exact path="/books/:bookId([0-9]+)" component={Book}/>
                 <Route exact path="/books/:bookId([0-9]+)/edit" render={props => <EditBookForm {...props} loggedIn={this.state.loggedIn}/>}/>
-                <Route exact path="/books/add" component={BookAddForm}/>
+                <Route exact path="/books/add" render={props => <BookAddForm {...props} loggedIn={this.state.loggedIn}/>}/>
                 <Route exact path="/books" component={Books}/>
 
 
                 <Route exact path="/authors/:authorId([0-9]+)" component={Author}/>
-                <Route exact path="/authors/:authorId([0-9]+)/edit"render={props => <EditAuthorForm {...props} loggedIn={this.state.loggedIn}/>}/>
-
-                <Route exact path="/authors/add" render={() => <AuthorAddForm loggedIn={this.state.loggedIn}/>}/>
-
+                <Route exact path="/authors/:authorId([0-9]+)/edit" render={props => <EditAuthorForm {...props} loggedIn={this.state.loggedIn}/>}/>
+                <Route exact path="/authors/add" render={() => <AuthorAddForm {...props} loggedIn={this.state.loggedIn}/>}/>
                 <Route exact path="/authors" component={Authors}/>
 
 
                 <Route exact path="/about" component={About}/>
 
-
                 <Route exact path='/random' component={Random}/>
 
                 <Route exact path="/logout" render={() => <Logout logout={this.handleLogout}/>}/>
 
-                <Route exact path="/login" render={() => <MegaLogin handleLogin={this.handleLogin}/>}/>
+                <Route exact path="/login" render={() => <Login handleLogin={this.handleLogin}/>}/>
 
                 <Route exact path="/register" render={() => <RegisterUser handleLogin={this.handleLogin}/>}/>
 

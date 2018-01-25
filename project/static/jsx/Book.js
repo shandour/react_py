@@ -8,7 +8,8 @@ import {
     Panel,
     ListGroup,
     ListGroupItem,
-    PageHeader
+    PageHeader,
+    Pagination
 } from 'react-bootstrap'
 
 import {Code404Error} from './Code404Error.js'
@@ -99,34 +100,70 @@ class Book extends React.Component {
 class Books extends React.Component{
     constructor(props) {
        super(props);
-       this.state = {books: []};
+        this.state = {
+            books: [],
+            active_page: 1,
+            all_pages: null,
+            isLoaded: false
+        };
+        this.handleSelect = this.handleSelect.bind(this);
     }
 
     componentDidMount() {
-        fetch('/api/books').then(results=> results.json()).then(data => {
-            this.setState({books: data});
+        fetch('/api/books?page=1').then(results=> results.json()).then(data => {
+            this.setState({
+                books: data.books,
+                all_pages: data.all_pages,
+                isLoaded:true
+            });
         });
     }
 
+    handleSelect(eventKey) {
+        let req = new Request(`/api/books?page=${eventKey}`, {credentials: 'same-origin'});
+        fetch(req).then(resp => resp.json()).then(data => {
+            this.setState({
+                books: data.books,
+                all_pages: data.all_pages,
+                active_page: data.active_page
+            });
+        }).catch(err => {console.log('Something went wrong while fetching data');});
+    }
+
     render() {
-        var f = bookLinks.bind(this);
-        var sortedBooks = f(this.state.books);
+        let {isLoaded, books, active_page, all_pages} = this.state;
+        if (isLoaded) {
+            var boundBookLinks = bookLinks.bind(this);
+            var sortedBooks = boundBookLinks(books);
 
-        return (
-                <div>
-                <div>
-                Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  <Link to={"/books/add"}> Please push here, then!</Link>
+            return (
+                    <div>
+                    <div>
+                    Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  <Link to={"/books/add"}> Please push here, then!</Link>
+                    </div>
+                    <div>
+                    {sortedBooks}
                 </div>
-                {sortedBooks.length > 0
-                 ? <div>
-                 {sortedBooks}
-                 </div>
-                 :<h1>Loading...</h1>
-                }
-
-            </div>
-        );
-    };
+                    {all_pages > 1 &&
+                     <Pagination
+                     prev
+                     next
+                     first
+                     last
+                     ellipsis
+                     boundaryLinks
+                     items={all_pages}
+                     maxButtons={5}
+                     activePage={Number(active_page)}
+                     onSelect={this.handleSelect}
+                     />
+                    }
+                </div>
+            );
+        } else {
+            return <h3>Loading...</h3>
+        }
+    }
 }
 
 export {Book, Books}

@@ -43489,6 +43489,9 @@ function CustomField(props) {
     );
 }
 
+//paginate comments (here and in db_operations)
+//reset password element / use change password api view
+
 var Comment = function (_React$Component) {
     _inherits(Comment, _React$Component);
 
@@ -44273,7 +44276,13 @@ var Books = function (_React$Component2) {
 
         var _this3 = _possibleConstructorReturn(this, (Books.__proto__ || Object.getPrototypeOf(Books)).call(this, props));
 
-        _this3.state = { books: [] };
+        _this3.state = {
+            books: [],
+            active_page: 1,
+            all_pages: null,
+            isLoaded: false
+        };
+        _this3.handleSelect = _this3.handleSelect.bind(_this3);
         return _this3;
     }
 
@@ -44282,41 +44291,85 @@ var Books = function (_React$Component2) {
         value: function componentDidMount() {
             var _this4 = this;
 
-            fetch('/api/books').then(function (results) {
+            fetch('/api/books?page=1').then(function (results) {
                 return results.json();
             }).then(function (data) {
-                _this4.setState({ books: data });
+                _this4.setState({
+                    books: data.books,
+                    all_pages: data.all_pages,
+                    isLoaded: true
+                });
+            });
+        }
+    }, {
+        key: 'handleSelect',
+        value: function handleSelect(eventKey) {
+            var _this5 = this;
+
+            var req = new Request('/api/books?page=' + eventKey, { credentials: 'same-origin' });
+            fetch(req).then(function (resp) {
+                return resp.json();
+            }).then(function (data) {
+                _this5.setState({
+                    books: data.books,
+                    all_pages: data.all_pages,
+                    active_page: data.active_page
+                });
+            }).catch(function (err) {
+                console.log('Something went wrong while fetching data');
             });
         }
     }, {
         key: 'render',
         value: function render() {
-            var f = bookLinks.bind(this);
-            var sortedBooks = f(this.state.books);
+            var _state2 = this.state,
+                isLoaded = _state2.isLoaded,
+                books = _state2.books,
+                active_page = _state2.active_page,
+                all_pages = _state2.all_pages;
 
-            return _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(
+            if (isLoaded) {
+                var boundBookLinks = bookLinks.bind(this);
+                var sortedBooks = boundBookLinks(books);
+
+                return _react2.default.createElement(
                     'div',
                     null,
-                    'Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  ',
                     _react2.default.createElement(
-                        _reactRouterDom.Link,
-                        { to: "/books/add" },
-                        ' Please push here, then!'
-                    )
-                ),
-                sortedBooks.length > 0 ? _react2.default.createElement(
-                    'div',
-                    null,
-                    sortedBooks
-                ) : _react2.default.createElement(
-                    'h1',
+                        'div',
+                        null,
+                        'Here is our glorious treasury of opera magna, the book hoard any scholar would rip his way through the throats of those precluding his access thereto! If you feel like making our e-penis even bigger feel free to contribute!  ',
+                        _react2.default.createElement(
+                            _reactRouterDom.Link,
+                            { to: "/books/add" },
+                            ' Please push here, then!'
+                        )
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        null,
+                        sortedBooks
+                    ),
+                    all_pages > 1 && _react2.default.createElement(_reactBootstrap.Pagination, {
+                        prev: true,
+                        next: true,
+                        first: true,
+                        last: true,
+                        ellipsis: true,
+                        boundaryLinks: true,
+                        items: all_pages,
+                        maxButtons: 5,
+                        activePage: Number(active_page),
+                        onSelect: this.handleSelect
+                    })
+                );
+            } else {
+                return _react2.default.createElement(
+                    'h3',
                     null,
                     'Loading...'
-                )
-            );
+                );
+            }
         }
     }]);
 
