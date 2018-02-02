@@ -1,6 +1,6 @@
-import React from 'react'
+import React from 'react';
 
-import {Redirect} from 'react-router-dom'
+import {Redirect} from 'react-router-dom';
 
 import {
     PageHeader,
@@ -9,76 +9,49 @@ import {
     ControlLabel,
     HelpBlock,
     Button
-} from 'react-bootstrap'
+} from 'react-bootstrap';
+
+import {CustomField} from './CustomInputField.js';
 
 
-function getBookFields(n, books, errors=[]) {
-    if (n <= 0) {
-        return '';
+function getBookFields() {
+    if (this.state.books.length < 1) {
+        return null;
     }
+
+    const errors = this.state.errors.books;
     let counter = 0;
-    const booksField = [];
-    while (counter < n ){
-        booksField[counter] = (
-                <div>
-                {errors && typeof errors[counter] !== 'undefined' && typeof errors[counter]['title'] !== 'undefined'
-                 ?
-                 <div>
-                 <CustomField name={`books-${counter}-title`} onChange={this.handleChange} id={counter.toString()} value={books[counter]["books-"+ counter +"-title"]} validationState='error'/>
-                 <HelpBlock>{errors[counter]['title']}</HelpBlock>
-                 </div>
-                 :
-                 <CustomField name={`books-${counter}-title`} onChange={this.handleChange} id={counter.toString()} value={books[counter]["books-"+ counter +"-title"]} validationState={null}/>
-                }
+    const bookFields = [];
+    for (let item of this.state.books){
+        for (let key of Object.keys(item)) {
+            const errorKey = key.slice(key.lastIndexOf('-')+1);
+            const errorsExist = (errors && typeof errors[counter] !== 'undefined'
+                                 && typeof errors[counter][errorKey] !== 'undefined');
+            const validationState = errorsExist? 'error': null;
+            const componentClass = errorKey == 'content'? 'textarea': 'input';
+            bookFields.push(
+                    <div>
+                    <CustomField name={key}
+                onChange={this.handleChange}
+                id={counter.toString()}
+                value={item[key]}
+                validationState={validationState}
+                componentClass={componentClass}
+                labelWord={'Enter'}
+                applyBooksRegexFormat={true}/>
+                    {errorsExist &&
+                     <HelpBlock> {errors[counter][errorKey]} </HelpBlock>
+                    }
+                    </div>);
+        }
 
-            {(errors && typeof errors[counter] !== 'undefined' && typeof errors[counter]['overview'] !== 'undefined')
-             ?
-             <div>
-             <CustomField name={`books-${counter}-overview`} onChange={this.handleChange} id={counter.toString()} value={books[counter]["books-"+ counter +"-overview"]} validationState='error'/>
-             <HelpBlock>{errors[counter]['title']}</HelpBlock>
-             </div>
-             :
-             <CustomField name={`books-${counter}-overview`} onChange={this.handleChange} id={counter.toString()} value={books[counter]["books-"+ counter +"-overview"]} validationState={null}/>
-            }
-
-            {(errors && typeof errors[counter] !== 'undefined' && typeof errors[counter]['content'] !== 'undefined')
-             ?
-             <div>
-             <CustomField name={`books-${counter}-content`} onChange={this.handleChange} id={counter.toString()} value={books[counter]["books-"+ counter +"-content"]} validationState='error' componentClass="textarea"/>
-             <HelpBlock>{errors[counter]['title']}</HelpBlock>
-             </div>
-             :
-             <CustomField name={`books-${counter}-content`} onChange={this.handleChange} id={counter.toString()} value={books[counter]["books-"+ counter +"-content"]} validationState={null} componentClass="textarea"/>
-            }
-
-                <Button onClick={this.removeBook} id={counter.toString()}>
+        bookFields.push(
+                <Button onClick={this.removeBook} id={counter.toString()} className='remove-book-button'>
                 Remove book
-            </Button>
-                </div>);
+            </Button>);
         counter++;
     }
-    return booksField;
-}
-
-
-function CustomField (props) {
-    let formatted = props.name.replace(/_|-|\d/g, ' ');
-    formatted = formatted.replace(/\s\s+/g, ' ');
-    formatted = formatted.replace('books', 'book');
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{`Enter ${formatted}`}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={`Provide ${formatted}`}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-            />
-            </FormGroup>
-    );
+    return bookFields;
 }
 
 
@@ -133,21 +106,21 @@ class AuthorAddForm extends React.Component {
     }
 
     addBook (e) {
-        let books = this.state.books.slice();
+        let {books, booksCounter} = this.state;
         let num = books.length;
         books.push({['books-' + num + "-title"]:'', ['books-' + num + "-overview"]: '', ['books-' + num + "-content"]: ''});
-        this.setState({books});
-        this.setState((prevState, props) => {
-            return {booksCounter: prevState.booksCounter + 1};
+        this.setState({
+            books: books,
+            booksCounter: booksCounter + 1
         });
     }
 
-//CHANGE: update state once at the end of all the stuff below; maybe, just copy the whole of this.state and tweak it, then set
     removeBook (e){
         let removeId = e.target.id;
-        let books = this.state.books.slice();
+        let books = this.state.books.slice(0);
+        let {errors, booksCounter} = this.state;
         books.splice(removeId, 1);
-        
+
         while (removeId < books.length) {
             let newId = parseInt(removeId, 10) + 1;
             let title = books[removeId]['books-' + newId + "-title"];
@@ -160,18 +133,16 @@ class AuthorAddForm extends React.Component {
             };
             removeId++;
         }
-        this.setState({books});
-        this.setState((prevState, props) => {
-            return {booksCounter: prevState.booksCounter - 1};
-        });
-        if (this.state.errors.hasOwnProperty('books')){
-            let errors = Object.assign({}, this.state.errors);
-            let removeErrorId = e.target.id
+
+        booksCounter--;
+
+        if (errors.hasOwnProperty('books')){
+            let removeErrorId = e.target.id;
             delete errors['books'][removeErrorId];
             let bookErrors = errors['books'];
             if (removeErrorId != (this.state.books.length -1)) {
                 for (let k in bookErrors) {
-                    if (k < removeId) {
+                    if (k < removeErrorId) {
                         continue;
                     }
                     Object.defineProperty(bookErrors,(k-1).toString(),
@@ -180,10 +151,14 @@ class AuthorAddForm extends React.Component {
                 }
             }
 
-                errors['books'] = bookErrors;
-                this.setState({errors});
-            }
+            errors['books'] = bookErrors;
         }
+        this.setState({
+            errors: errors,
+            booksCounter: booksCounter,
+            books: books
+        });
+    }
 
 
     render () {
@@ -192,14 +167,14 @@ class AuthorAddForm extends React.Component {
         }
         const successStatus = this.state.errors.success ? true: false;
         let n = this.state.booksCounter;
-        const booksField = getBookFields.bind(this)(n, this.state.books, this.state.errors.books);
+        const booksField = getBookFields.bind(this)();
 
         const authorFields = Object.keys(this.state.author).map((d) => {
             let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;
 
             return (
                 <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state}/>
+                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} labelWord={'Enter'}/>
                     {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
                      <HelpBlock>{this.state.errors[d]}</HelpBlock>
                     }

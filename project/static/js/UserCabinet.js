@@ -43392,6 +43392,64 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.CustomField = undefined;
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function CustomField(props) {
+    var name = typeof applyRegex !== 'undefined' ? props.name.replace(/_+/, ' ') : props.name;
+    var applyBooksRegexFormat = typeof props.applyBooksRegexFormat !== 'undefined' ? true : false;
+
+    if (applyBooksRegexFormat) {
+        name = name.replace(/_|-|\d/g, ' ');
+        name = name.replace(/\s\s+/g, ' ');
+        name = name.replace('books', 'book');
+    }
+
+    if (props.name == 'password_confirm') {
+        name = 'password';
+    }
+
+    var type = typeof props.type !== 'undefined' ? props.type : 'text';
+    var labelWord = typeof props.labelWord !== 'undefined' ? props.labelWord : 'Provide';
+    var placeholder = typeof props.placeholder !== 'undefined' ? props.placeholder : 'Provide ' + name;
+
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            labelWord + ' ' + name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            placeholder: placeholder,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id,
+            componentClass: props.componentClass,
+            type: type
+        })
+    );
+}
+
+exports.CustomField = CustomField;
+
+//TODO: import this everywhere
+
+},{"react":318,"react-bootstrap":264}],326:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 exports.UserCabinet = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -43404,6 +43462,8 @@ var _reactRouterDom = require('react-router-dom');
 
 var _reactBootstrap = require('react-bootstrap');
 
+var _CustomInputField = require('./CustomInputField.js');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -43411,28 +43471,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function CustomField(props) {
-    var name = 'Provide ' + props.name.replace(/_+/, ' ');
-
-    return _react2.default.createElement(
-        _reactBootstrap.FormGroup,
-        { validationState: props.validationState },
-        _react2.default.createElement(
-            _reactBootstrap.ControlLabel,
-            null,
-            name
-        ),
-        _react2.default.createElement(_reactBootstrap.FormControl, {
-            type: props.type,
-            placeholder: name,
-            name: props.name,
-            onChange: props.onChange,
-            value: props.value,
-            id: props.id
-        })
-    );
-}
 
 var UserCabinet = function (_React$Component) {
     _inherits(UserCabinet, _React$Component);
@@ -43792,7 +43830,7 @@ var UserCabinet = function (_React$Component) {
                                 return _react2.default.createElement(
                                     'div',
                                     null,
-                                    _react2.default.createElement(CustomField, {
+                                    _react2.default.createElement(_CustomInputField.CustomField, {
                                         name: key,
                                         onChange: _this5.handlePasswordChange,
                                         validationState: state,
@@ -43925,4 +43963,4 @@ var UserCabinet = function (_React$Component) {
 
 exports.UserCabinet = UserCabinet;
 
-},{"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[325]);
+},{"./CustomInputField.js":325,"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[326]);

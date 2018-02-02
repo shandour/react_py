@@ -43428,16 +43428,16 @@ var Code404Error = function Code404Error(_ref) {
                 location.pathname
             )
         ),
-        _react2.default.createElement(_reactBootstrap.Image, { src: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/Baphomet.png', responsive: true }),
+        _react2.default.createElement(_reactBootstrap.Image, { src: 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Kittyply_edit1.jpg', responsive: true }),
         _react2.default.createElement(
             'h2',
             null,
-            'There is no escape unless thou pledgest thy soul unto Lord Satan'
+            'There is no escape unless thou pledgest thy soul unto Lord Catan'
         ),
         _react2.default.createElement(
             _reactRouterDom.Link,
             { to: '/' },
-            'Hail Satan!'
+            'Hail Catan!'
         )
     );
 };

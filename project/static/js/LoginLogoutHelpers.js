@@ -43392,6 +43392,64 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.CustomField = undefined;
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function CustomField(props) {
+    var name = typeof applyRegex !== 'undefined' ? props.name.replace(/_+/, ' ') : props.name;
+    var applyBooksRegexFormat = typeof props.applyBooksRegexFormat !== 'undefined' ? true : false;
+
+    if (applyBooksRegexFormat) {
+        name = name.replace(/_|-|\d/g, ' ');
+        name = name.replace(/\s\s+/g, ' ');
+        name = name.replace('books', 'book');
+    }
+
+    if (props.name == 'password_confirm') {
+        name = 'password';
+    }
+
+    var type = typeof props.type !== 'undefined' ? props.type : 'text';
+    var labelWord = typeof props.labelWord !== 'undefined' ? props.labelWord : 'Provide';
+    var placeholder = typeof props.placeholder !== 'undefined' ? props.placeholder : 'Provide ' + name;
+
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            labelWord + ' ' + name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            placeholder: placeholder,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id,
+            componentClass: props.componentClass,
+            type: type
+        })
+    );
+}
+
+exports.CustomField = CustomField;
+
+//TODO: import this everywhere
+
+},{"react":318,"react-bootstrap":264}],326:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 exports.Login = exports.Logout = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -43404,9 +43462,9 @@ var _reactRouterDom = require('react-router-dom');
 
 var _reactBootstrap = require('react-bootstrap');
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _CustomInputField = require('./CustomInputField.js');
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -43456,27 +43514,6 @@ var Logout = function (_React$Component) {
 
     return Logout;
 }(_react2.default.Component);
-
-function CustomField(props) {
-    return _react2.default.createElement(
-        _reactBootstrap.FormGroup,
-        { validationState: props.validationState },
-        _react2.default.createElement(
-            _reactBootstrap.ControlLabel,
-            null,
-            'Provide ' + props.name
-        ),
-        _react2.default.createElement(_reactBootstrap.FormControl, _defineProperty({
-            type: 'text',
-            placeholder: 'Provide ' + props.name,
-            name: props.name,
-            onChange: props.onChange,
-            value: props.value,
-            id: props.id,
-            componentClass: props.componentClass
-        }, 'type', props.type))
-    );
-}
 
 var Login = function (_React$Component2) {
     _inherits(Login, _React$Component2);
@@ -43583,7 +43620,7 @@ var Login = function (_React$Component2) {
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + key, onChange: _this6.handleChange, validationState: state, type: type }),
+                    _react2.default.createElement(_CustomInputField.CustomField, { name: '' + key, onChange: _this6.handleChange, validationState: state, type: type }),
                     _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
@@ -43611,17 +43648,6 @@ var Login = function (_React$Component2) {
                         null,
                         _react2.default.createElement(
                             _reactBootstrap.ListGroupItem,
-                            { header: 'Forgot the password?', active: true },
-                            glyph,
-                            ' ',
-                            _react2.default.createElement(
-                                _reactRouterDom.Link,
-                                { to: '/reset', style: { 'color': 'rgb(199, 221, 239)' } },
-                                'Despair not, we\'ve got what you need! '
-                            )
-                        ),
-                        _react2.default.createElement(
-                            _reactBootstrap.ListGroupItem,
                             { header: 'Never had one to begin with?', active: true },
                             glyph,
                             ' ',
@@ -43643,4 +43669,4 @@ var Login = function (_React$Component2) {
 exports.Logout = Logout;
 exports.Login = Login;
 
-},{"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[325]);
+},{"./CustomInputField.js":325,"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[326]);

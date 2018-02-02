@@ -53639,6 +53639,64 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.CustomField = undefined;
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function CustomField(props) {
+    var name = typeof applyRegex !== 'undefined' ? props.name.replace(/_+/, ' ') : props.name;
+    var applyBooksRegexFormat = typeof props.applyBooksRegexFormat !== 'undefined' ? true : false;
+
+    if (applyBooksRegexFormat) {
+        name = name.replace(/_|-|\d/g, ' ');
+        name = name.replace(/\s\s+/g, ' ');
+        name = name.replace('books', 'book');
+    }
+
+    if (props.name == 'password_confirm') {
+        name = 'password';
+    }
+
+    var type = typeof props.type !== 'undefined' ? props.type : 'text';
+    var labelWord = typeof props.labelWord !== 'undefined' ? props.labelWord : 'Provide';
+    var placeholder = typeof props.placeholder !== 'undefined' ? props.placeholder : 'Provide ' + name;
+
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            labelWord + ' ' + name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            placeholder: placeholder,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id,
+            componentClass: props.componentClass,
+            type: type
+        })
+    );
+}
+
+exports.CustomField = CustomField;
+
+//TODO: import this everywhere
+
+},{"react":526,"react-bootstrap":437}],538:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 exports.BookAddForm = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -53655,6 +53713,8 @@ var _reactRouterDom = require('react-router-dom');
 
 var _reactBootstrap = require('react-bootstrap');
 
+var _CustomInputField = require('./CustomInputField.js');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -53664,27 +53724,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function CustomField(props) {
-    return _react2.default.createElement(
-        _reactBootstrap.FormGroup,
-        { validationState: props.validationState },
-        _react2.default.createElement(
-            _reactBootstrap.ControlLabel,
-            null,
-            'Provide ' + props.name
-        ),
-        _react2.default.createElement(_reactBootstrap.FormControl, {
-            type: 'text',
-            placeholder: 'Provide ' + props.name,
-            name: props.name,
-            onChange: props.onChange,
-            value: props.value,
-            id: props.id,
-            componentClass: props.componentClass
-        })
-    );
-}
 
 var BookAddForm = function (_React$Component) {
     _inherits(BookAddForm, _React$Component);
@@ -53928,7 +53967,7 @@ var BookAddForm = function (_React$Component) {
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, componentClass: fieldClass }),
+                    _react2.default.createElement(_CustomInputField.CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, componentClass: fieldClass }),
                     _this6.state.errors && typeof _this6.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
@@ -53994,4 +54033,4 @@ var BookAddForm = function (_React$Component) {
 
 exports.BookAddForm = BookAddForm;
 
-},{"react":526,"react-bootstrap":437,"react-router-dom":509,"react-tag-input":521}]},{},[537]);
+},{"./CustomInputField.js":537,"react":526,"react-bootstrap":437,"react-router-dom":509,"react-tag-input":521}]},{},[538]);

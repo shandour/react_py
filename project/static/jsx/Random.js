@@ -1,6 +1,6 @@
-import React from 'react'
+import React from 'react';
 
-import {Redirect} from 'react-router-dom'
+import {Redirect} from 'react-router-dom';
 
 class Random extends React.Component {
     constructor(props) {

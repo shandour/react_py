@@ -10,9 +10,10 @@ import {
     ControlLabel,
     FormControl,
     Glyphicon,
-    Checkbox,
-    Col
+    Checkbox
 } from 'react-bootstrap'
+
+import {CustomField} from './CustomInputField.js'
 
 
 class Logout extends React.Component {
@@ -40,25 +41,6 @@ class Logout extends React.Component {
             return (<h2>Logging out...</h2>);
         }
     }
-}
-
-
-function CustomField (props) {
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{`Provide ${props.name}`}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={`Provide ${props.name}`}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-        type={props.type}
-            />
-            </FormGroup>
-    );
 }
 
 
@@ -163,10 +145,6 @@ class Login extends React.Component {
 
                 <div style={{marginTop: '2em'}}>
                 <ListGroup>
-                <ListGroupItem header={'Forgot the password?'} active>
-                {glyph} <Link to='/reset' style={{'color': 'rgb(199, 221, 239)'}}>Despair not, we&#39;ve got what you need! </Link>
-            </ListGroupItem>
-
                 <ListGroupItem header={'Never had one to begin with?'} active>
                 {glyph} <Link to='/register' style={{'color': 'rgb(199, 221, 239)'}}> Guess what? In that case, we&#39;ve got what you need as well! </Link>
             </ListGroupItem>

@@ -1,21 +1,20 @@
-import React from 'react'
+import React from 'react';
 
 import {
     Route,
     Link
-} from 'react-router-dom'
+} from 'react-router-dom';
 
 import {
     Panel,
     ListGroup,
     ListGroupItem,
-    PageHeader,
-    Pagination
-} from 'react-bootstrap'
+    PageHeader
+} from 'react-bootstrap';
 
-import {Code404Error} from './Code404Error.js'
+import {Code404Error} from './Code404Error.js';
 
-import {Comments} from './Comments.js'
+import {Comments} from './Comments.js';
 
 
 function authorLinks(authors) {
@@ -55,7 +54,7 @@ class Author extends React.Component {
     }
 
     componentDidMount() {
-        console.log(this.props.location.hash);
+        console.log(this.props.location.pageId);
         fetch(`/api/authors/${this.props.match.params.authorId}`).then(results => {
             if (results.status == 404) {
                 this.setState({errorCode404: true});
@@ -114,36 +113,21 @@ class Authors extends React.Component{
         super(props);
        this.state = {
            authors: [],
-           active_page: 1,
-           all_pages: null,
            isLoaded: false
        };
-       this.handleSelect = this.handleSelect.bind(this);
     }
 
     componentDidMount() {
-        fetch('/api/authors?page=1').then(results => results.json()).then(data => {
+        fetch('/api/authors').then(results => results.json()).then(data => {
             this.setState({
                 authors: data.authors,
-                all_pages: data.all_pages,
                 isLoaded:true
             });
         });
     }
 
-    handleSelect(eventKey) {
-        let req = new Request(`/api/authors?page=${eventKey}`, {credentials: 'same-origin'});
-        fetch(req).then(resp => resp.json()).then(data => {
-            this.setState({
-                authors: data.authors,
-                all_pages: data.all_pages,
-                active_page: data.active_page
-            });
-        }).catch(err => {console.log('Something went wrong while fetching data');});
-    }
-
     render() {
-        let {isLoaded, authors, active_page, all_pages} = this.state;
+        let {isLoaded, authors} = this.state;
         if (isLoaded) {
             let boundAuthorLinks = authorLinks.bind(this);
             const sortedAuthors = boundAuthorLinks(authors);
@@ -159,20 +143,6 @@ class Authors extends React.Component{
                     <div>
                     {sortedAuthors}
                 </div>
-                    {all_pages > 1 &&
-                     <Pagination
-                     prev
-                     next
-                     first
-                     last
-                     ellipsis
-                     boundaryLinks
-                     items={all_pages}
-                     maxButtons={5}
-                     activePage={Number(active_page)}
-                     onSelect={this.handleSelect}
-                     />
-                    }
                     </div>
             );
         } else {
@@ -181,4 +151,4 @@ class Authors extends React.Component{
     }
 }
 
-export {Author, Authors}
+export {Author, Authors};

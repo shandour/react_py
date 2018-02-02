@@ -15,26 +15,7 @@ import {
     Button
 } from 'react-bootstrap'
 
-
-function CustomField (props) {
-    let formatted = props.name.replace(/_|-|\d/g, ' ');
-    formatted = formatted.replace(/\s\s+/g, ' ');
-    formatted = formatted.replace('books', 'book');
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{`Enter ${formatted}`}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={`Provide ${formatted}`}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-            />
-            </FormGroup>
-    );
-}
+import {CustomField} from './CustomInputField.js'
 
 
 class EditAuthorForm extends React.Component {
@@ -262,7 +243,7 @@ class EditAuthorForm extends React.Component {
             let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;
             return (
                     <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} value={this.state.author[d]}/>
+                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} value={this.state.author[d]} labelWord={'Enter'} applyBooksRegexFormat={true}/>
                     {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
                      <HelpBlock>{this.state.errors[d]}</HelpBlock>
                     }

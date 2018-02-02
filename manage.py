@@ -60,15 +60,29 @@ def add_user(username, email, password, role=None):
 
 
 @manager.command
-@manager.option('-i', '--iteration_number', dest='iteration_number')
-@manager.option('-u', '--users_number', dest='users_number')
-@manager.option('-c', '--max_comments', dest='max_comments_per_entity')
-def create_fixtures(iteration_number=100,
+@manager.option('-i', '--iteration_number',
+                dest='iteration_number',
+                type=int)
+@manager.option('-u', '--users_number',
+                dest='users_number',
+                type=int)
+@manager.option('-m', '--max_comments',
+                dest='max_comments_per_entity',
+                type=int)
+@manager.option('-r', '--randomize_max_comments',
+                dest='randomized_max_number',
+                action='store_true')
+def create_fixtures(iteration_number=1,
                     users_number=10,
-                    max_comments_per_entity=100):
+                    max_comments_per_entity=100,
+                    randomized_max_number=False):
     "Creates fixtures"
     from create_fixtures import create_fixtures as cf
-    cf(int(iteration_number), int(users_number), int(max_comments_per_entity))
+
+    cf(int(iteration_number),
+       int(users_number),
+       int(max_comments_per_entity),
+       int(randomized_max_number))
 
 
 manager.add_command('runserver', Server())

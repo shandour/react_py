@@ -45,6 +45,7 @@ import {RegisterUser} from './RegisterUser.js';
 
 import {UserCabinet} from './UserCabinet.js'
 
+
 const testOutPut = loremIpsum({count:200});
 
 const Home = () => (
@@ -170,9 +171,10 @@ class App extends React.Component {
                 <Route exact path="/books" component={Books}/>
 
 
-                <Route exact path="/authors/:authorId([0-9]+)" component={Author}/>
+ 
+                 <Route exact path="/authors/:authorId([0-9]+)" component={Author}/>
                 <Route exact path="/authors/:authorId([0-9]+)/edit" render={props => <EditAuthorForm {...props} loggedIn={this.state.loggedIn}/>}/>
-                <Route exact path="/authors/add" render={() => <AuthorAddForm {...props} loggedIn={this.state.loggedIn}/>}/>
+                <Route exact path="/authors/add" render={props => <AuthorAddForm {...props} loggedIn={this.state.loggedIn}/>}/>
                 <Route exact path="/authors" component={Authors}/>
 
 

@@ -1,8 +1,8 @@
-import React from 'react'
+import React from 'react';
 
 import { WithContext as ReactTags } from 'react-tag-input';
 
-import {Redirect, Link} from 'react-router-dom'
+import {Redirect, Link} from 'react-router-dom';
 
 import {
     PageHeader,
@@ -11,24 +11,9 @@ import {
     ControlLabel,
     HelpBlock,
     Button
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 
-function CustomField (props) {
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{`Provide ${props.name}`}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={`Provide ${props.name}`}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-            />
-            </FormGroup>
-    );
-}
+import {CustomField} from './CustomInputField.js';
 
 
 class BookAddForm extends React.Component {
@@ -265,4 +250,4 @@ class BookAddForm extends React.Component {
 }
 
 
-export {BookAddForm}
+export {BookAddForm};

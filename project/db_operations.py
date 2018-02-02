@@ -3,28 +3,15 @@ from collections import OrderedDict
 
 import datetime
 
-from math import ceil
-
 from project.models import Author, Book, AuthorComment, BookComment, User, db
 
 from flask import abort, current_app as app
 
-from sqlalchemy import func, case
-
 
 def get_all_authors_with_sections(page=1):
     """Returns an OrderedDict of first name letters of corresponding authors"""
-    comments_per_page = app.config['BOOKS_AND_AUTHORS_PAGINATION_PER_PAGE']
     authors = Author.query.order_by(db.asc(Author.surname),
-                                    db.asc(Author.name)).\
-                          paginate(
-                              page=int(page),
-                              per_page=comments_per_page,
-                              error_out=False).items
-    author_count = Author.query.count()
-    all_pages = (1 if author_count <= comments_per_page
-                    else author_count / comments_per_page + 1)
-
+                                    db.asc(Author.name)).all()
     d = OrderedDict()
     for a in authors:
         first_letter = a.surname[0].upper() if a.surname else a.name[0].upper()
@@ -32,9 +19,8 @@ def get_all_authors_with_sections(page=1):
             d[first_letter] = []
         d[first_letter].append(dict(id=a.id, name=a.name, surname=a.surname))
 
-    authors_dict = {'authors' : d,
-                    'all_pages': all_pages,
-                    'active_page': page}
+    authors_dict = {'authors': d}
+
     return authors_dict
 
 def get_author_by_id(id=None):
@@ -110,20 +96,18 @@ def sort_user_comments(sort_dict, user_id=None):
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.created_at.desc())
     elif sort_dict['sort_option'] == 'last-change':
-        comments_query = comments_query.filter(comments_type\
-                                               .edited.isnot(None))
+        comments_query = comments_query.filter(comments_type
+                                               .edited !=
+                                               comments_type
+                                               .created_at)
         sort_query = (comments_type.edited.asc()
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.edited.desc())
     elif sort_dict['sort_option'] == 'creation-change':
         if sort_dict['sort_direction'] == 'asc':
-            sort_query = (func.coalesce(
-                AuthorComment.edited,
-                AuthorComment.created_at).asc())
+            sort_query = comments_type.edited.asc()
         else:
-            sort_query = (func.coalesce(
-                AuthorComment.edited,
-                AuthorComment.created_at).desc())
+            sort_query = comments_type.edited.desc()
     comments_pagination = (comments_query
                 .order_by(sort_query)
                 .paginate(
@@ -150,18 +134,9 @@ def sort_user_comments(sort_dict, user_id=None):
     }
 
 
-def get_all_books_with_sections(page=1):
+def get_all_books_with_sections():
     """Returns an OrderedDict of first name letters of corresponding books"""
-    comments_per_page = app.config['BOOKS_AND_AUTHORS_PAGINATION_PER_PAGE']
-    books = Book.query.order_by(db.asc(Book.title))\
-            .paginate(
-                page=int(page),
-                per_page=comments_per_page,
-                error_out=False).items
-    book_count = Book.query.count()
-    all_pages = (1 if book_count <= comments_per_page
-                 else book_count / comments_per_page + 1)
-
+    books = Book.query.order_by(db.asc(Book.title)).all()
     d = OrderedDict()
     for b in books:
         first_letter = b.title[0].upper()
@@ -177,9 +152,7 @@ def get_all_books_with_sections(page=1):
             ]
         ))
 
-    books_dict = {'books' : d,
-                    'all_pages': all_pages,
-                    'active_page': page}
+    books_dict = {'books': d}
 
     return books_dict
 
@@ -283,7 +256,7 @@ def update_comment(comment_id, comment_type, form):
         comment = AuthorComment.query.get(comment_id)
         comment.topic = form.topic.data
         comment.text = form.text.data
-        comment.edited = datetime.datetime.now()
+        comment.edited = datetime.datetime.utcnow()
         db.session.commit()
         return {
         'topic': comment.topic,
@@ -294,7 +267,7 @@ def update_comment(comment_id, comment_type, form):
         comment = BookComment.query.get(comment_id)
         comment.topic = form.topic.data
         comment.text = form.text.data
-        comment.edited = datetime.datetime.now()
+        comment.edited = datetime.datetime.utcnow()
         db.session.commit()
         return {
         'topic': comment.topic,
@@ -431,9 +404,33 @@ def get_suggestions(query, suggestion_type, amount=None):
     return suggestions_dict
 
 
-def get_all_author_comments_by_author_id(author_id, user_id=None):
+def get_all_author_comments_by_author_id(
+        author_id,
+        user_id=None,
+        chunk=1,
+        comment_to_highlight=None):
+
+    comments_per_chunk = app.config['COMMENTS_PER_CHUNK']
+    comments_query = (AuthorComment.query
+        .filter(AuthorComment.author_id==author_id)
+        .order_by(AuthorComment.edited
+        .desc()))
+    if comment_to_highlight:
+        comments_list = comments_query.all()
+        comment_index = comments_list.index(
+            AuthorComment.query.get(comment_to_highlight))
+        comments_list = comments_list[:comment_index+comments_per_chunk]
+        if comment_index > comments_per_chunk:
+            chunk = comment_index / comments_per_chunk + 1
+    else:
+        comments_list = comments_query.offset((chunk-1)*comments_per_chunk)\
+        .limit(comments_per_chunk).all()
+    comments_left = True if (comments_list and not len(
+        comments_list) < comments_per_chunk) else False
+
     if user_id is None:
-        comments = [
+        comments_dict = {
+            'comments': [
             {
                 'id': c.id,
                 'topic': c.topic,
@@ -446,12 +443,14 @@ def get_all_author_comments_by_author_id(author_id, user_id=None):
                 'disliked': False,
                 'current_user_wrote': False
             }
-        for c in AuthorComment.query.join(Author,
-                                          AuthorComment\
-                                          .author_id==author_id).all()]
+                for c in comments_list],
+            'chunk': chunk,
+            'comments_left': comments_left
+        }
     else:
         user = User.query.get(user_id)
-        comments = [
+        comments_dict = {
+            'comments': [
             {
                 'id': c.id,
                 'topic': c.topic,
@@ -465,15 +464,40 @@ def get_all_author_comments_by_author_id(author_id, user_id=None):
                              else False),
                 'current_user_wrote': True if c.user is user else False
             }
-            for c in AuthorComment.query.join(Author,
-                                              AuthorComment\
-                                              .author_id==author_id).all()]
+                for c in comments_list],
+            'chunk': chunk,
+            'comments_left': comments_left
+        }
 
-    return comments
+    return comments_dict
 
-def get_all_book_comments_by_book_id(book_id, user_id):
+def get_all_book_comments_by_book_id(
+        book_id,
+        user_id=None,
+        chunk=1,
+        comment_to_highlight=None):
+
+    comments_per_chunk = app.config['COMMENTS_PER_CHUNK']
+    comments_query = (BookComment.query
+        .filter(BookComment.book_id==book_id)
+        .order_by(BookComment.edited
+        .desc()))
+    if comment_to_highlight:
+        comments_list = comments_query.all()
+        comment_index = comments_list.index(
+            BookComment.query.get(comment_to_highlight))
+        comments_list = comments_list[:comment_index+comments_per_chunk]
+        if comment_index > comments_per_chunk:
+            chunk = comment_index / comments_per_chunk + 1
+    else:
+        comments_list = comments_query.slice(((chunk-1)*comments_per_chunk),
+        comments_per_chunk).all()
+    comments_left = True if (comments_list and not len(
+        comments_list) < comments_per_chunk) else False
+
     if user_id is None:
-        comments = [
+        comments_dict = {
+            'comments': [
             {
                 'id': c.id,
                 'topic': c.topic,
@@ -486,11 +510,14 @@ def get_all_book_comments_by_book_id(book_id, user_id):
                 'disliked': False,
                 'current_user_wrote': False
             }
-        for c in BookComment.query.join(Book,
-                                        BookComment.book_id==book_id).all()]
+                for c in comments_list],
+            'chunk': chunk,
+            'comments_left': comments_left
+        }
     else:
         user = User.query.get(user_id)
-        comments = [
+        comments_dict = {
+            'comments': [
             {
                 'id': c.id,
                 'topic': c.topic,
@@ -504,10 +531,12 @@ def get_all_book_comments_by_book_id(book_id, user_id):
                              else False),
                 'current_user_wrote': True if c.user is user else False
             }
-        for c in BookComment.query.join(Book,
-                                        BookComment.book_id==book_id).all()]
+        for c in comments_list],
+            'chunk': chunk,
+            'comments_left': comments_left
+        }
 
-    return comments
+    return comments_dict
 
 def add_comment (form, user_id, comment_type, entity_id):
     if comment_type.lower() == 'author':
@@ -517,6 +546,8 @@ def add_comment (form, user_id, comment_type, entity_id):
         comment.author = Author.query.get(entity_id)
         comment.user = User.query.get(user_id)
         db.session.add(comment)
+        db.session.flush()
+        comment.edited = comment.created_at
         db.session.commit()
         return {
             'id': comment.id,
@@ -535,6 +566,8 @@ def add_comment (form, user_id, comment_type, entity_id):
         comment.book = Book.query.get(entity_id)
         comment.user = User.query.get(user_id)
         db.session.add(comment)
+        db.session.flush()
+        comment.edited = comment.created_at
         db.session.commit()
         return {
             'id': comment.id,

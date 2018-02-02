@@ -43392,6 +43392,64 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.CustomField = undefined;
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function CustomField(props) {
+    var name = typeof applyRegex !== 'undefined' ? props.name.replace(/_+/, ' ') : props.name;
+    var applyBooksRegexFormat = typeof props.applyBooksRegexFormat !== 'undefined' ? true : false;
+
+    if (applyBooksRegexFormat) {
+        name = name.replace(/_|-|\d/g, ' ');
+        name = name.replace(/\s\s+/g, ' ');
+        name = name.replace('books', 'book');
+    }
+
+    if (props.name == 'password_confirm') {
+        name = 'password';
+    }
+
+    var type = typeof props.type !== 'undefined' ? props.type : 'text';
+    var labelWord = typeof props.labelWord !== 'undefined' ? props.labelWord : 'Provide';
+    var placeholder = typeof props.placeholder !== 'undefined' ? props.placeholder : 'Provide ' + name;
+
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            labelWord + ' ' + name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            placeholder: placeholder,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id,
+            componentClass: props.componentClass,
+            type: type
+        })
+    );
+}
+
+exports.CustomField = CustomField;
+
+//TODO: import this everywhere
+
+},{"react":318,"react-bootstrap":264}],326:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 exports.AuthorAddForm = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -43404,6 +43462,8 @@ var _reactRouterDom = require('react-router-dom');
 
 var _reactBootstrap = require('react-bootstrap');
 
+var _CustomInputField = require('./CustomInputField.js');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -43414,81 +43474,91 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-function getBookFields(n, books) {
-    var errors = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-    if (n <= 0) {
-        return '';
+function getBookFields() {
+    if (this.state.books.length < 1) {
+        return null;
     }
+
+    var errors = this.state.errors.books;
     var counter = 0;
-    var booksField = [];
-    while (counter < n) {
-        booksField[counter] = _react2.default.createElement(
-            'div',
-            null,
-            errors && typeof errors[counter] !== 'undefined' && typeof errors[counter]['title'] !== 'undefined' ? _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(CustomField, { name: 'books-' + counter + '-title', onChange: this.handleChange, id: counter.toString(), value: books[counter]["books-" + counter + "-title"], validationState: 'error' }),
-                _react2.default.createElement(
-                    _reactBootstrap.HelpBlock,
-                    null,
-                    errors[counter]['title']
-                )
-            ) : _react2.default.createElement(CustomField, { name: 'books-' + counter + '-title', onChange: this.handleChange, id: counter.toString(), value: books[counter]["books-" + counter + "-title"], validationState: null }),
-            errors && typeof errors[counter] !== 'undefined' && typeof errors[counter]['overview'] !== 'undefined' ? _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(CustomField, { name: 'books-' + counter + '-overview', onChange: this.handleChange, id: counter.toString(), value: books[counter]["books-" + counter + "-overview"], validationState: 'error' }),
-                _react2.default.createElement(
-                    _reactBootstrap.HelpBlock,
-                    null,
-                    errors[counter]['title']
-                )
-            ) : _react2.default.createElement(CustomField, { name: 'books-' + counter + '-overview', onChange: this.handleChange, id: counter.toString(), value: books[counter]["books-" + counter + "-overview"], validationState: null }),
-            errors && typeof errors[counter] !== 'undefined' && typeof errors[counter]['content'] !== 'undefined' ? _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(CustomField, { name: 'books-' + counter + '-content', onChange: this.handleChange, id: counter.toString(), value: books[counter]["books-" + counter + "-content"], validationState: 'error', componentClass: 'textarea' }),
-                _react2.default.createElement(
-                    _reactBootstrap.HelpBlock,
-                    null,
-                    errors[counter]['title']
-                )
-            ) : _react2.default.createElement(CustomField, { name: 'books-' + counter + '-content', onChange: this.handleChange, id: counter.toString(), value: books[counter]["books-" + counter + "-content"], validationState: null, componentClass: 'textarea' }),
-            _react2.default.createElement(
-                _reactBootstrap.Button,
-                { onClick: this.removeBook, id: counter.toString() },
-                'Remove book'
-            )
-        );
-        counter++;
-    }
-    return booksField;
-}
+    var bookFields = [];
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
-function CustomField(props) {
-    var formatted = props.name.replace(/_|-|\d/g, ' ');
-    formatted = formatted.replace(/\s\s+/g, ' ');
-    formatted = formatted.replace('books', 'book');
-    return _react2.default.createElement(
-        _reactBootstrap.FormGroup,
-        { validationState: props.validationState },
-        _react2.default.createElement(
-            _reactBootstrap.ControlLabel,
-            null,
-            'Enter ' + formatted
-        ),
-        _react2.default.createElement(_reactBootstrap.FormControl, {
-            type: 'text',
-            placeholder: 'Provide ' + formatted,
-            name: props.name,
-            onChange: props.onChange,
-            value: props.value,
-            id: props.id,
-            componentClass: props.componentClass
-        })
-    );
+    try {
+        for (var _iterator = this.state.books[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var item = _step.value;
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = Object.keys(item)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var key = _step2.value;
+
+                    var errorKey = key.slice(key.lastIndexOf('-') + 1);
+                    var errorsExist = errors && typeof errors[counter] !== 'undefined' && typeof errors[counter][errorKey] !== 'undefined';
+                    var validationState = errorsExist ? 'error' : null;
+                    var componentClass = errorKey == 'content' ? 'textarea' : 'input';
+                    bookFields.push(_react2.default.createElement(
+                        'div',
+                        null,
+                        _react2.default.createElement(_CustomInputField.CustomField, { name: key,
+                            onChange: this.handleChange,
+                            id: counter.toString(),
+                            value: item[key],
+                            validationState: validationState,
+                            componentClass: componentClass,
+                            labelWord: 'Enter',
+                            applyBooksRegexFormat: true }),
+                        errorsExist && _react2.default.createElement(
+                            _reactBootstrap.HelpBlock,
+                            null,
+                            ' ',
+                            errors[counter][errorKey],
+                            ' '
+                        )
+                    ));
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                        _iterator2.return();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
+            }
+
+            bookFields.push(_react2.default.createElement(
+                _reactBootstrap.Button,
+                { onClick: this.removeBook, id: counter.toString(), className: 'remove-book-button' },
+                'Remove book'
+            ));
+            counter++;
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+            }
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
+            }
+        }
+    }
+
+    return bookFields;
 }
 
 var AuthorAddForm = function (_React$Component) {
@@ -43521,51 +43591,51 @@ var AuthorAddForm = function (_React$Component) {
 
             e.preventDefault();
             var bodyObj = Object.assign({}, this.state.author);
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
 
             try {
-                for (var _iterator = this.state.books[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var obj = _step.value;
+                for (var _iterator3 = this.state.books[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var obj = _step3.value;
 
                     var keys = Object.keys(obj);
-                    var _iteratorNormalCompletion2 = true;
-                    var _didIteratorError2 = false;
-                    var _iteratorError2 = undefined;
+                    var _iteratorNormalCompletion4 = true;
+                    var _didIteratorError4 = false;
+                    var _iteratorError4 = undefined;
 
                     try {
-                        for (var _iterator2 = keys[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                            var i = _step2.value;
+                        for (var _iterator4 = keys[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                            var i = _step4.value;
 
                             bodyObj[i] = obj[i];
                         }
                     } catch (err) {
-                        _didIteratorError2 = true;
-                        _iteratorError2 = err;
+                        _didIteratorError4 = true;
+                        _iteratorError4 = err;
                     } finally {
                         try {
-                            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                                _iterator2.return();
+                            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                                _iterator4.return();
                             }
                         } finally {
-                            if (_didIteratorError2) {
-                                throw _iteratorError2;
+                            if (_didIteratorError4) {
+                                throw _iteratorError4;
                             }
                         }
                     }
                 }
             } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
+                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                        _iterator3.return();
                     }
                 } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
+                    if (_didIteratorError3) {
+                        throw _iteratorError3;
                     }
                 }
             }
@@ -43601,22 +43671,26 @@ var AuthorAddForm = function (_React$Component) {
         value: function addBook(e) {
             var _books$push;
 
-            var books = this.state.books.slice();
+            var _state = this.state,
+                books = _state.books,
+                booksCounter = _state.booksCounter;
+
             var num = books.length;
             books.push((_books$push = {}, _defineProperty(_books$push, 'books-' + num + "-title", ''), _defineProperty(_books$push, 'books-' + num + "-overview", ''), _defineProperty(_books$push, 'books-' + num + "-content", ''), _books$push));
-            this.setState({ books: books });
-            this.setState(function (prevState, props) {
-                return { booksCounter: prevState.booksCounter + 1 };
+            this.setState({
+                books: books,
+                booksCounter: booksCounter + 1
             });
         }
-
-        //CHANGE: update state once at the end of all the stuff below; maybe, just copy the whole of this.state and tweak it, then set
-
     }, {
         key: 'removeBook',
         value: function removeBook(e) {
             var removeId = e.target.id;
-            var books = this.state.books.slice();
+            var books = this.state.books.slice(0);
+            var _state2 = this.state,
+                errors = _state2.errors,
+                booksCounter = _state2.booksCounter;
+
             books.splice(removeId, 1);
 
             while (removeId < books.length) {
@@ -43629,18 +43703,16 @@ var AuthorAddForm = function (_React$Component) {
                 books[removeId] = (_books$removeId = {}, _defineProperty(_books$removeId, 'books-' + removeId + "-title", title), _defineProperty(_books$removeId, 'books-' + removeId + "-overview", overview), _defineProperty(_books$removeId, 'books-' + removeId + "-content", contents), _books$removeId);
                 removeId++;
             }
-            this.setState({ books: books });
-            this.setState(function (prevState, props) {
-                return { booksCounter: prevState.booksCounter - 1 };
-            });
-            if (this.state.errors.hasOwnProperty('books')) {
-                var errors = Object.assign({}, this.state.errors);
+
+            booksCounter--;
+
+            if (errors.hasOwnProperty('books')) {
                 var removeErrorId = e.target.id;
                 delete errors['books'][removeErrorId];
                 var bookErrors = errors['books'];
                 if (removeErrorId != this.state.books.length - 1) {
                     for (var k in bookErrors) {
-                        if (k < removeId) {
+                        if (k < removeErrorId) {
                             continue;
                         }
                         Object.defineProperty(bookErrors, (k - 1).toString(), Object.getOwnPropertyDescriptor(bookErrors, k));
@@ -43649,8 +43721,12 @@ var AuthorAddForm = function (_React$Component) {
                 }
 
                 errors['books'] = bookErrors;
-                this.setState({ errors: errors });
             }
+            this.setState({
+                errors: errors,
+                booksCounter: booksCounter,
+                books: books
+            });
         }
     }, {
         key: 'render',
@@ -43662,7 +43738,7 @@ var AuthorAddForm = function (_React$Component) {
             }
             var successStatus = this.state.errors.success ? true : false;
             var n = this.state.booksCounter;
-            var booksField = getBookFields.bind(this)(n, this.state.books, this.state.errors.books);
+            var booksField = getBookFields.bind(this)();
 
             var authorFields = Object.keys(this.state.author).map(function (d) {
                 var state = typeof _this3.state.errors[d] !== 'undefined' ? "error" : null;
@@ -43670,7 +43746,7 @@ var AuthorAddForm = function (_React$Component) {
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this3.handleChange, validationState: state }),
+                    _react2.default.createElement(_CustomInputField.CustomField, { name: '' + d, onChange: _this3.handleChange, validationState: state, labelWord: 'Enter' }),
                     _this3.state.errors && typeof _this3.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
@@ -43710,4 +43786,4 @@ var AuthorAddForm = function (_React$Component) {
 
 exports.AuthorAddForm = AuthorAddForm;
 
-},{"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[325]);
+},{"./CustomInputField.js":325,"react":318,"react-bootstrap":264,"react-router-dom":304}]},{},[326]);

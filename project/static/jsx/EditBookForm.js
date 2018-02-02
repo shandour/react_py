@@ -1,10 +1,10 @@
-import React from 'react'
+import React from 'react';
 
 import {WithContext as ReactTags} from 'react-tag-input';
 
-import {Redirect} from 'react-router-dom'
+import {Redirect} from 'react-router-dom';
 
-import {Code404Error} from './Code404Error.js'
+import {Code404Error} from './Code404Error.js';
 
 import {
     PageHeader,
@@ -13,28 +13,9 @@ import {
     ControlLabel,
     HelpBlock,
     Button
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 
-
-function CustomField (props) {
-    let formatted = props.name.replace(/_|-|\d/g, ' ');
-    formatted = formatted.replace(/\s\s+/g, ' ');
-    formatted = formatted.replace('books', 'book');
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{`Enter ${formatted}`}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={`Provide ${formatted}`}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-            />
-            </FormGroup>
-    );
-}
+import {CustomField} from './CustomInputField.js';
 
 
 class EditBookForm extends React.Component {
@@ -264,7 +245,7 @@ class EditBookForm extends React.Component {
 
             return (
                     <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} value={this.state.book[d]} componentClass={fieldClass}/>
+                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} value={this.state.book[d]} componentClass={fieldClass} labelWord={'Enter'} applyBooksRegexFormat={true}/>
                     {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
                      <HelpBlock>{this.state.errors[d]}</HelpBlock>
                     }

@@ -11,27 +11,9 @@ import {
     FormControl,
     Glyphicon,
     Checkbox
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 
-
-function CustomField (props) {
-    let name = props.name == 'password_confirm'? 'Confirm password': `Provide ${props.name}`;
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{name}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={name}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-        type={props.type}
-            />
-            </FormGroup>
-    );
-}
+import {CustomField} from './CustomInputField.js';
 
 
 class RegisterUser extends React.Component {
@@ -102,7 +84,7 @@ class RegisterUser extends React.Component {
             let type = key == 'password' || key == 'password_confirm'? 'password': 'text';
             return (
                     <div>
-                    <CustomField name={`${key}`} onChange={this.handleChange} validationState={state} type={type}/>
+                    <CustomField name={`${key}`} onChange={this.handleChange} validationState={state} type={type} labelWord={'Confirm'}/>
                     <HelpBlock>
                     {typeof errors[key] !== 'undefined' && errors[key].length > 0 &&
                      errors[key]

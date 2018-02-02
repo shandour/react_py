@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {Link} from 'react-router-dom'
+import {Link} from 'react-router-dom';
 
 import {
     PageHeader,
@@ -20,26 +20,10 @@ import {
     ControlLabel,
     FormControl,
     HelpBlock
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 
+import {CustomField} from './CustomInputField.js';
 
-function CustomField (props) {
-    let name = 'Provide ' +props.name.replace(/_+/, ' ');
-
-    return (
-        <FormGroup validationState={props.validationState}>
-            <ControlLabel>{name}</ControlLabel>
-        <FormControl
-        type={props.type}
-    placeholder={name}
-    name={props.name}
-    onChange={props.onChange}
-    value={props.value}
-    id={props.id}
-        />
-        </FormGroup>
-    );
-}
 
 class UserCabinet extends React.Component {
     constructor(props) {

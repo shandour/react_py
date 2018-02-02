@@ -19,7 +19,8 @@ from project.models import (
 def create_fixtures(
         creation_iteration_number=100,
         users_number=10,
-        max_comments_per_entity_number=100):
+        max_comments_per_entity_number=100,
+        use_randomized_max_number=False):
     if creation_iteration_number < 1:
         return
 
@@ -67,8 +68,10 @@ def create_fixtures(
 
     db.session.add_all(object_list)
     db.session.flush()
-    create_comments(max_comments_per_entity_number)
+    create_comments(max_comments_per_entity_number, use_randomized_max_number)
     db.session.commit()
+    db.engine.execute(AuthorComment.__table__.update().values(edited=AuthorComment.created_at))
+    db.engine.execute(BookComment.__table__.update().values(edited=BookComment.created_at))
 
 
 def return_random_string(min_letters, max_letters):
@@ -112,7 +115,7 @@ def create_users_list(users_number):
 
     return user_list
 
-def create_comments(max_comments_per_entity_number):
+def create_comments(max_comments_per_entity_number, use_randomized_max_number=False):
     book_list = Book.query.all()
     author_list = Author.query.all()
     user_list = User.query.all()
@@ -120,12 +123,14 @@ def create_comments(max_comments_per_entity_number):
         'book',
         max_comments_per_entity_number,
         book_list,
-        user_list)
+        user_list,
+        use_randomized_max_number)
     create_comments_helper(
         'author',
         max_comments_per_entity_number,
         author_list,
-        user_list)
+        user_list,
+        use_randomized_max_number)
 
 
 
@@ -133,10 +138,14 @@ def create_comments_helper(
         comment_type,
         max_comments_per_entity_number,
         entity_list,
-        user_list):
+        user_list,
+        use_randomized_max_number=False):
     Entity = BookComment if comment_type == 'book' else AuthorComment
     for e in entity_list:
-        for i in range(randint(0, max_comments_per_entity_number)):
+        comments_number = (max_comments_per_entity_number
+                           if not use_randomized_max_number
+                           else randint(0, max_comments_per_entity_number))
+        while comments_number > 0:
             comment = Entity(
                 topic=return_random_string(0, 100),
                 text=return_random_text(1, 5)
@@ -160,3 +169,4 @@ def create_comments_helper(
             comment.likes_count = (len(comment.users_liked) -
                                    len(comment.users_disliked))
             e.comments.append(comment)
+            comments_number -= 1

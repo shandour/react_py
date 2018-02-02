@@ -1,4 +1,6 @@
-import React from 'react'
+import React from 'react';
+
+import InfiniteScroll from 'react-infinite-scroller';
 
 import {
     PageHeader,
@@ -10,35 +12,19 @@ import {
     Glyphicon,
     Badge,
     Well,
-    Alert
-} from 'react-bootstrap'
+    Alert,
+    Pagination
+} from 'react-bootstrap';
 
+import {CustomField} from './CustomInputField.js';
 
-function CustomField (props) {
-    return (
-            <FormGroup validationState={props.validationState}>
-            <ControlLabel>{`Enter ${props.name}`}</ControlLabel>
-            <FormControl
-        type="text"
-        placeholder={`Provide ${props.name}`}
-        name={props.name}
-        onChange={props.onChange}
-        value={props.value}
-        id={props.id}
-        componentClass={props.componentClass}
-            />
-            </FormGroup>
-    );
-}
-
-//paginate comments (here and in db_operations)
-//reset password element / use change password api view
 
 class Comment extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             commentInfo: this.props.commentInfo,
+            preEditSnapShot: null,
             beingEdited: false,
             errors: {
                 topic: [],
@@ -72,7 +58,7 @@ class Comment extends React.Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
-        let req = new Request(`/api/edit-comment/${this.props.entityType}/${this.state.commentInfo.id}`, options);
+        let req = new Request(`/api/edit-comment?comment_type=${this.props.entityType}&comment_id=${this.state.commentInfo.id}`, options);
         fetch(req).then(resp => resp.json()).then(data => {
             if (data['success']) {
                 let commentInfo = Object.assign({}, this.state.commentInfo);
@@ -93,11 +79,10 @@ class Comment extends React.Component {
             return;
         }
         if (!this.state.beingEdited) {
-            let req = new Request(`/api/can-user-edit/${this.props.entityType}/${this.props.commentInfo.id}`, {credentials: "same-origin"});
+            let req = new Request(`/api/can-user-edit?comment_type=${this.props.entityType}&comment_id=${this.props.commentInfo.id}`, {credentials: "same-origin"});
             fetch(req).then(resp => {
                 if (resp.status == 200) {
-                    this.setState({beingEdited: true});
-                    return;
+                    this.setState({beingEdited: true, preEditSnapShot: this.state.commentInfo});
                 } else if (resp.status == 403) {
                     this.setState({warning: 'You don\'t have the right to edit this'});
                 } else {
@@ -105,8 +90,7 @@ class Comment extends React.Component {
                 }
             });
         } else {
-            this.setState({beingEdited: false});
-            this.setState({commentInfo: this.props.commentInfo});
+            this.setState({beingEdited: false, commentInfo: this.state.preEditSnapShot});
         }
     }
 
@@ -123,20 +107,20 @@ class Comment extends React.Component {
             return;
         } else {
             const reaction = e.target.name;
-            let req = new Request(`/api/comments/attitude/${reaction}/${this.props.entityType}/${this.props.commentInfo.id}`, {credentials: 'same-origin'});
+            let req = new Request(`/api/comments/attitude?attitude=${reaction}&comment_type=${this.props.entityType}&comment_id=${this.props.commentInfo.id}`, {credentials: 'same-origin'});
             fetch(req).then(resp => {
                 if (resp.ok) {
                     return resp.json()
                 }
                 this.setState({warning: 'Log in to react to comments'});
-                resolve();
+                throw 'An error while processing your request';
             }).then(data => {
                 let commentInfo = Object.assign({}, this.state.commentInfo);
                 commentInfo['liked'] = data['liked'];
                 commentInfo['disliked'] = data['disliked'];
                 commentInfo['likes_count'] = data['likes_count'];
                 this.setState({commentInfo});
-            });
+            }).catch(err => {console.log(err);});
         }
     }
 
@@ -185,9 +169,8 @@ class Comment extends React.Component {
 
                 <div className="comment-info">
                 A comment by <span class='username'>{this.props.username}</span>. Created {commentInfo.created_at}.
-                {commentInfo.edited
-                 ? <span> Edited: {commentInfo.edited}</span>
-                 : null
+                {commentInfo.edited != commentInfo.created_at &&
+                 <span> Edited: {commentInfo.edited}</span>
                 }
             </div>
 
@@ -195,6 +178,7 @@ class Comment extends React.Component {
              ?
              <form name='edit-form' onSubmit={this.handleEditSubmit}>
              <CustomField
+             labelWord={'Enter'}
              id={'topic'}
              name={'Topic'}
              value={commentInfo.topic}
@@ -206,6 +190,7 @@ class Comment extends React.Component {
              </HelpBlock>
 
              <CustomField
+             labelWord={'Enter'}
              id={'text'}
              name={'Content'}
              value={commentInfo.text}
@@ -257,18 +242,28 @@ class Comments extends React.Component{
                 topic: '',
                 text: ''
             },
+            chunk: 1,
+            hasMoreToLoad: true,
             addCommentErrors: {}
         };
 
         this.handleChange = this.handleChange.bind(this);
         this.handleAddSubmit = this.handleAddSubmit.bind(this);
         this.handleDeleteComment = this.handleDeleteComment.bind(this);
+        this.loadMoreComments = this.loadMoreComments.bind(this);
     }
 
     componentDidMount() {
-        let req = new Request(`/api/${this.props.entityType}s/${this.props.entityId}/comments`, {credentials: "same-origin"});
+        const hash = location.hash.slice(1)
+        let req = new Request(`/api/${this.props.entityType}s/${this.props.entityId}/comments?chunk=${this.state.chunk}&highlight=${hash}`, {credentials: "same-origin"});
         fetch(req).then(resp => resp.json()).then(data => {
-            this.setState({commentsArray: data['comments'], loggedIn: data['authenticated'], isLoaded: true});
+            this.setState({
+                commentsArray: data['comments'],
+                loggedIn: data['authenticated'],
+                hasMoreToLoad: data['comments_left'],
+                chunk: data['chunk'],
+                isLoaded: true
+            });
         });
     }
 
@@ -291,10 +286,10 @@ class Comments extends React.Component{
                 return resp.json();
             } else if (resp.status == 403) {
                 this.setState({warning: 'You don\'t have the right to edit this'});
-                resolve();
+               throw `Action denied wiith error code ${resp.status}`;
             } else {
                 this.setState({warning: `Action denied wiith error code ${resp.status}`});
-                resolve();
+                throw `Action denied wiith error code ${resp.status}`;
             }
         }).then(data => {
             if (data['errors']) {
@@ -304,37 +299,66 @@ class Comments extends React.Component{
             if (data['success'] && data['new_comment']) {
                 let newComment = data['new_comment'];
                 let commentsArray = Array.from(this.state.commentsArray);
-                commentsArray.push(newComment);
+                commentsArray.unshift(newComment);
                 this.setState({commentsArray});
                 this.setState({addComment: {topic: '', text: ''}});
                 return;
             }
-        });
+        }).catch(err => {console.log(err);});
     }
 
 
     handleDeleteComment(commentId, commentCount) {
-        let req = new Request(`/api/can-user-edit/${this.props.entityType}/${commentId}`, {credentials: "same-origin"});
+        let req = new Request(`/api/can-user-edit?comment_type=${this.props.entityType}&comment_id=${commentId}`, {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (resp.ok) {
-                let req = new Request(`/api/delete-comment/${this.props.entityType}/${commentId}`, {credentials: "same-origin"});
+                let req = new Request(`/api/delete-comment?comment_type=${this.props.entityType}&comment_id=${commentId}`, {credentials: "same-origin"});
                 return fetch(req);
             } else {
-                resolve();
+                throw `Action denied wiith error code ${resp.status}`;
             }
         }).then(resp => {
             if (resp.ok) {
                 let commentsArray = Array.from(this.state.commentsArray);
                 commentsArray.splice(commentCount, 1);
                 this.setState({commentsArray});
-                return;
             }
+        }).catch(err => {console.log(err);});
+    }
+
+    loadMoreComments(nextPage) {
+        let req = new Request(`/api/${this.props.entityType}s/${this.props.entityId}/comments?chunk=${nextPage}`,
+                              {credentials: 'same-origin'});
+
+        fetch(req).then(resp => {
+            if (!resp.ok) {
+                this.setState({warning: 'You have no permission to view this.'});
+                throw resp.status;
+            } else {
+                return resp.json();
+            }
+        }).then(data => {
+            let {commentsArray} = this.state;
+            commentsArray.push(...data['comments']);
+            this.setState({
+                commentsArray: commentsArray,
+                loggedIn: data['authenticated'],
+                chunk: data['chunk'],
+                hasMoreToLoad: data['comments_left']
+            });
+        }).catch(err => {
+            console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);
         });
     }
 
 
     render() {
-        let {commentsArray, isLoaded, addCommentErrors, warning, addComment} = this.state;
+        let {commentsArray,
+             isLoaded,
+             addCommentErrors,
+             warning,
+             addComment,
+             hasMoreToLoad} = this.state;
         if (!isLoaded) {
             return <h3>Loading...</h3>;
         } else {
@@ -354,7 +378,6 @@ class Comments extends React.Component{
                 const username = c.username;
                 const disabled = c.current_user_wrote ? false : true;
                 const shouldFocus = location.hash == `#${c.id}` ? true : false;
-                console.log([c.id, shouldFocus]);
                 comments.push(
                         <div class="comment">
                         <Comment key={commentInfo.id.toString()} commentInfo={commentInfo} username={username} handleDeleteComment={this.handleDeleteComment} loggedIn={this.state.loggedIn} entityType={this.props.entityType} countInArray={count} deleteDisabled={disabled} shouldFocus={shouldFocus}/>
@@ -368,11 +391,9 @@ class Comments extends React.Component{
 
             return (
                     <div>
-                    <div>{comments}</div>
-
-                <hr />
                     <form name='add-form' onSubmit={this.handleAddSubmit}>
                     <CustomField
+                labelWord={'Enter'}
                 id={'topic'}
                 name={'Topic'}
                 onChange={this.handleChange}
@@ -384,6 +405,7 @@ class Comments extends React.Component{
                 </HelpBlock>
 
                     <CustomField
+                labelWord={'Enter'}
                 id={'text'}
                 name={'Content'}
                 onChange={this.handleChange}
@@ -400,6 +422,20 @@ class Comments extends React.Component{
                     {warning &&
                      <span class='edit-impossible-warning'>{warning}</span>
                     }
+
+                <hr />
+                    <div>
+                    <InfiniteScroll
+                pageStart={1}
+                loadMore={this.loadMoreComments}
+                hasMore={hasMoreToLoad}
+                loader={<div className="loader">Loading ...</div>}>
+
+                    {comments}
+
+                </InfiniteScroll>
+
+                </div>
 
                     </div>
             );

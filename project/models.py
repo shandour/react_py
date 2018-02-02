@@ -71,9 +71,9 @@ class CommentsMixIn(object):
     id = db.Column(db.Integer, primary_key=True)
     topic = db.Column(db.String(1000))
     text = db.Column(db.Text)
-    likes_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime(), default=datetime.now())
-    edited = db.Column(db.DateTime())
+    likes_count = db.Column(db.Integer, default=0, index=True)
+    created_at = db.Column(db.DateTime(), default=datetime.utcnow, index=True)
+    edited = db.Column(db.DateTime(), index=True)
 
 class BookComment(db.Model, CommentsMixIn):
     __tablename__ = 'book_comments'
@@ -195,24 +195,15 @@ class Role(db.Model, RoleMixin):
 
 #INDICES
 
-#comments_indices
-db.Index('idx_authorcomments_created', AuthorComment.created_at)
-db.Index('idx_authorcomments_edited_not_none',
-         ((AuthorComment.edited.isnot(None))))
-db.Index('idx_authorcomments_likes_count', AuthorComment.likes_count)
-db.Index('idx_authorcomments_creation_change_sort_query', ((func.coalesce(
-   AuthorComment.edited,
-   AuthorComment.created_at)))
-)
+#comments_indices; effectiveness checked on sets of comments larger than 100000
+db.Index('idx_authorcomments_edited_user_id',
+         AuthorComment.edited,
+         AuthorComment.user_id)
 
-db.Index('idx_bookcomments_created', BookComment.created_at)
-db.Index('idx_bookcomments_edited_not_none',
-         ((BookComment.edited.isnot(None))))
-db.Index('idx_bookcomments_likes_count', BookComment.likes_count)
-db.Index('idx_bookcomments_creation_change_sort_query', ((func.coalesce(
-   BookComment.edited,
-   BookComment.created_at)))
-)
+db.Index('idx_bookcomments_edited_user_id',
+         BookComment.edited,
+         BookComment.user_id)
+
 
 #full-text search indices
 db.Index('idx_authors_name_full_text_search',

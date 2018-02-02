@@ -53675,16 +53675,16 @@ var Code404Error = function Code404Error(_ref) {
                 location.pathname
             )
         ),
-        _react2.default.createElement(_reactBootstrap.Image, { src: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/Baphomet.png', responsive: true }),
+        _react2.default.createElement(_reactBootstrap.Image, { src: 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Kittyply_edit1.jpg', responsive: true }),
         _react2.default.createElement(
             'h2',
             null,
-            'There is no escape unless thou pledgest thy soul unto Lord Satan'
+            'There is no escape unless thou pledgest thy soul unto Lord Catan'
         ),
         _react2.default.createElement(
             _reactRouterDom.Link,
             { to: '/' },
-            'Hail Satan!'
+            'Hail Catan!'
         )
     );
 };
@@ -53692,6 +53692,64 @@ var Code404Error = function Code404Error(_ref) {
 exports.Code404Error = Code404Error;
 
 },{"react":526,"react-bootstrap":437,"react-router-dom":509}],538:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.CustomField = undefined;
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactBootstrap = require('react-bootstrap');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function CustomField(props) {
+    var name = typeof applyRegex !== 'undefined' ? props.name.replace(/_+/, ' ') : props.name;
+    var applyBooksRegexFormat = typeof props.applyBooksRegexFormat !== 'undefined' ? true : false;
+
+    if (applyBooksRegexFormat) {
+        name = name.replace(/_|-|\d/g, ' ');
+        name = name.replace(/\s\s+/g, ' ');
+        name = name.replace('books', 'book');
+    }
+
+    if (props.name == 'password_confirm') {
+        name = 'password';
+    }
+
+    var type = typeof props.type !== 'undefined' ? props.type : 'text';
+    var labelWord = typeof props.labelWord !== 'undefined' ? props.labelWord : 'Provide';
+    var placeholder = typeof props.placeholder !== 'undefined' ? props.placeholder : 'Provide ' + name;
+
+    return _react2.default.createElement(
+        _reactBootstrap.FormGroup,
+        { validationState: props.validationState },
+        _react2.default.createElement(
+            _reactBootstrap.ControlLabel,
+            null,
+            labelWord + ' ' + name
+        ),
+        _react2.default.createElement(_reactBootstrap.FormControl, {
+            placeholder: placeholder,
+            name: props.name,
+            onChange: props.onChange,
+            value: props.value,
+            id: props.id,
+            componentClass: props.componentClass,
+            type: type
+        })
+    );
+}
+
+exports.CustomField = CustomField;
+
+//TODO: import this everywhere
+
+},{"react":526,"react-bootstrap":437}],539:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -53715,6 +53773,8 @@ var _Code404Error = require('./Code404Error.js');
 
 var _reactBootstrap = require('react-bootstrap');
 
+var _CustomInputField = require('./CustomInputField.js');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -53724,30 +53784,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function CustomField(props) {
-    var formatted = props.name.replace(/_|-|\d/g, ' ');
-    formatted = formatted.replace(/\s\s+/g, ' ');
-    formatted = formatted.replace('books', 'book');
-    return _react2.default.createElement(
-        _reactBootstrap.FormGroup,
-        { validationState: props.validationState },
-        _react2.default.createElement(
-            _reactBootstrap.ControlLabel,
-            null,
-            'Enter ' + formatted
-        ),
-        _react2.default.createElement(_reactBootstrap.FormControl, {
-            type: 'text',
-            placeholder: 'Provide ' + formatted,
-            name: props.name,
-            onChange: props.onChange,
-            value: props.value,
-            id: props.id,
-            componentClass: props.componentClass
-        })
-    );
-}
 
 var EditAuthorForm = function (_React$Component) {
     _inherits(EditAuthorForm, _React$Component);
@@ -54057,7 +54093,7 @@ var EditAuthorForm = function (_React$Component) {
                 return _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, value: _this6.state.author[d] }),
+                    _react2.default.createElement(_CustomInputField.CustomField, { name: '' + d, onChange: _this6.handleChange, validationState: state, value: _this6.state.author[d], labelWord: 'Enter', applyBooksRegexFormat: true }),
                     _this6.state.errors && typeof _this6.state.errors[d] !== 'undefined' && _react2.default.createElement(
                         _reactBootstrap.HelpBlock,
                         null,
@@ -54121,4 +54157,4 @@ var EditAuthorForm = function (_React$Component) {
 
 exports.EditAuthorForm = EditAuthorForm;
 
-},{"./Code404Error.js":537,"react":526,"react-bootstrap":437,"react-router-dom":509,"react-tag-input":521}]},{},[538]);
+},{"./Code404Error.js":537,"./CustomInputField.js":538,"react":526,"react-bootstrap":437,"react-router-dom":509,"react-tag-input":521}]},{},[539]);

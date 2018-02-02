@@ -1,20 +1,19 @@
-import React from 'react'
+import React from 'react';
 
 import {
     Link
-} from 'react-router-dom'
+} from 'react-router-dom';
 
 import {
     Panel,
     ListGroup,
     ListGroupItem,
-    PageHeader,
-    Pagination
-} from 'react-bootstrap'
+    PageHeader
+} from 'react-bootstrap';
 
-import {Code404Error} from './Code404Error.js'
+import {Code404Error} from './Code404Error.js';
 
-import {Comments} from './Comments.js'
+import {Comments} from './Comments.js';
 
 
 function bookLinks(books) {
@@ -102,36 +101,21 @@ class Books extends React.Component{
        super(props);
         this.state = {
             books: [],
-            active_page: 1,
-            all_pages: null,
             isLoaded: false
         };
-        this.handleSelect = this.handleSelect.bind(this);
     }
 
     componentDidMount() {
-        fetch('/api/books?page=1').then(results=> results.json()).then(data => {
+        fetch('/api/books').then(results=> results.json()).then(data => {
             this.setState({
                 books: data.books,
-                all_pages: data.all_pages,
                 isLoaded:true
             });
         });
     }
 
-    handleSelect(eventKey) {
-        let req = new Request(`/api/books?page=${eventKey}`, {credentials: 'same-origin'});
-        fetch(req).then(resp => resp.json()).then(data => {
-            this.setState({
-                books: data.books,
-                all_pages: data.all_pages,
-                active_page: data.active_page
-            });
-        }).catch(err => {console.log('Something went wrong while fetching data');});
-    }
-
     render() {
-        let {isLoaded, books, active_page, all_pages} = this.state;
+        let {isLoaded, books} = this.state;
         if (isLoaded) {
             var boundBookLinks = bookLinks.bind(this);
             var sortedBooks = boundBookLinks(books);
@@ -144,20 +128,6 @@ class Books extends React.Component{
                     <div>
                     {sortedBooks}
                 </div>
-                    {all_pages > 1 &&
-                     <Pagination
-                     prev
-                     next
-                     first
-                     last
-                     ellipsis
-                     boundaryLinks
-                     items={all_pages}
-                     maxButtons={5}
-                     activePage={Number(active_page)}
-                     onSelect={this.handleSelect}
-                     />
-                    }
                 </div>
             );
         } else {
@@ -166,4 +136,4 @@ class Books extends React.Component{
     }
 }
 
-export {Book, Books}
+export {Book, Books};
