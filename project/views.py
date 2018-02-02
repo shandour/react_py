@@ -4,7 +4,6 @@ from flask import (
     jsonify,
     request,
     Response,
-    abort,
     after_this_request
 )
 
@@ -12,8 +11,7 @@ from flask_security import (
     current_user,
     logout_user,
     login_user,
-    login_required,
-    LoginForm,
+    LoginForm
 )
 
 from flask_security.views import _commit

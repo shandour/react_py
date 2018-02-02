@@ -43,7 +43,7 @@ class BookAddForm extends React.Component {
     }
 
     componentDidMount() {
-        fetch("/api/authors-initial-suggestions").then(results=> {return results.json();}).then(data => {
+        fetch("/api/authors-initial-suggestions").then(results=> results.json()).then(data => {
             this.setState({
                 suggestions: data.suggestions,
                 initialFinished: data.finished,
