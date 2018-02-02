@@ -3,7 +3,7 @@ yarn-error.log
 npm-debug.log
 local_settings.py
 foo.db
-static/js
+project/static/js
 *~
 *.pyc
-static/modules
+project/static/modules
