@@ -30,7 +30,7 @@ function getBookFields() {
             const validationState = errorsExist? 'error': null;
             const componentClass = errorKey == 'content'? 'textarea': 'input';
             bookFields.push(
-                    <div>
+                    <div key={key.toString()}>
                     <CustomField name={key}
                 onChange={this.handleChange}
                 id={counter.toString()}
@@ -46,7 +46,7 @@ function getBookFields() {
         }
 
         bookFields.push(
-                <Button onClick={this.removeBook} id={counter.toString()} className='remove-book-button'>
+                <Button key={`${counter}-remove-button`} onClick={this.removeBook} id={counter.toString()} className='remove-book-button'>
                 Remove book
             </Button>);
         counter++;
@@ -169,14 +169,14 @@ class AuthorAddForm extends React.Component {
         let n = this.state.booksCounter;
         const booksField = getBookFields.bind(this)();
 
-        const authorFields = Object.keys(this.state.author).map((d) => {
-            let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;
+        const authorFields = Object.keys(this.state.author).map((key) => {
+            const state = typeof this.state.errors[key] !== 'undefined' ? "error": null;
 
             return (
-                <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} labelWord={'Enter'}/>
-                    {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
-                     <HelpBlock>{this.state.errors[d]}</HelpBlock>
+                <div key={key.toString()}>
+                    <CustomField name={`${key}`} onChange={this.handleChange} validationState={state} labelWord={'Enter'}/>
+                    {(this.state.errors && typeof this.state.errors[key] !== 'undefined') &&
+                     <HelpBlock>{this.state.errors[key]}</HelpBlock>
                     }
                 </div>
             );

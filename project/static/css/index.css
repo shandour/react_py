@@ -136,3 +136,11 @@ body {
 .remove-book-button {
     margin-bottom: 5px;
 }
+
+.active-navlink {
+    font-weight: bold;
+}
+
+.user-dropdown-a {
+    margin-left: 15px;
+}

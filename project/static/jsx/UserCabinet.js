@@ -88,7 +88,10 @@ class UserCabinet extends React.Component {
     }
 
     togglePasswordChange() {
-        this.setState({passwordChangeToggle: !this.state.passwordChangeToggle, passwordChangeSuccess: false});
+        this.setState({
+            passwordChangeToggle: !this.state.passwordChangeToggle,
+            passwordChangeSuccess: false
+        });
     }
 
     submitPassword(e) {
@@ -97,7 +100,12 @@ class UserCabinet extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        const req = new Request('/api/change-password', {method: 'POST', credentials: 'same-origin', headers: myHeaders, body: new URLSearchParams(bodyObj)});
+        const req = new Request('/api/change-password',
+                                {method: 'POST',
+                                 credentials: 'same-origin',
+                                 headers: myHeaders,
+                                 body: new URLSearchParams(bodyObj)}
+                               );
         fetch(req).then(resp => {
             if (resp.ok){
                 this.setState({password: this.password,
@@ -109,7 +117,7 @@ class UserCabinet extends React.Component {
                     this.setState({errors: data});
                 });
             }
-        })
+        }).catch(err => {console.log('An error occured while processing your password change request.');});
     }
 
     handleSort(e) {
@@ -120,9 +128,7 @@ class UserCabinet extends React.Component {
 
     selectDropdown(type, eventKey) {
         let commentsDisplay = Object.assign({}, this.state.commentsDisplay);
-        console.log(eventKey);
         commentsDisplay[type] = eventKey;
-        console.log(commentsDisplay[type]);
         this.getCommentsOnChange(commentsDisplay);
     }
 
@@ -137,8 +143,7 @@ class UserCabinet extends React.Component {
         const sortOption = commentsDisplay.sortOption;
         const sortDirection = commentsDisplay.sortDirection;
         const currentPage = commentsDisplay.activePage;
-        console.log(commentsType);
-        let req = new Request(`/api/get-user-comments?sortOption=${sortOption}&sortDirection=${sortDirection}&commentsType=${commentsType}&page=${currentPage}`, {credentials: 'same-origin'});
+        const req = new Request(`/api/get-user-comments?sortOption=${sortOption}&sortDirection=${sortDirection}&commentsType=${commentsType}&page=${currentPage}`, {credentials: 'same-origin'});
 
         fetch(req).then(resp => {
             if (!resp.ok) {
@@ -192,19 +197,46 @@ class UserCabinet extends React.Component {
                 count++;
                 return(
                         <ListGroupItem key={`${obj.id}-${obj.entity.name}-comment`}>
+
                         <span className='expand-comment'>
-                        <Button onClick={this.expandCommentInfo} id={`${count}`} bsStyle='small'><Glyphicon glyph='glyphicon glyphicon-collapse-down'/></Button>
+                        <Button
+                    onClick={this.expandCommentInfo}
+                    id={`${count}`}
+                    bsSize='small'>
+                        <Glyphicon glyph='glyphicon glyphicon-collapse-down'/>
+                        </Button>
                         </span>
-                        <strong>Topic</strong>: <Label>{obj.topic}</Label>   <strong>Created</strong>: {obj.creation_date}   {obj.edition_date && <span><strong>Edited</strong>: {obj.edition_date}</span>}   <strong>Link</strong>: <Link to={{
+
+                        <strong>Topic</strong>: <Label>{obj.topic} </Label>
+                        <strong> Created</strong>: {obj.creation_date}
+                    {obj.edition_date != obj.creation_date &&
+                     <span>
+                     <strong>Edited</strong>: 
+                     {obj.edition_date}
+                     </span>
+                    }
+                        <strong>Link</strong>: 
+                        <Link to={{
                             pathname: `/${obj.entity.name}/${obj.entity.id}`,
                             hash: `#${obj.id}`
-                        }}>link</Link> <OverlayTrigger placement='top' overlay={<Tooltip id="tooltip">Likes count</Tooltip>}><Badge>{obj.attitude}</Badge></OverlayTrigger>
-                        {this.state.commentsDisplay.expandedComments.includes(count) &&
-                         <div className='comment-content'>
-                         {obj.text}
-                         </div>
-                        }
-                        </ListGroupItem>)
+                        }}>
+                        link
+                    </Link>
+                        <OverlayTrigger
+                    placement='top'
+                    overlay={<Tooltip id="tooltip">
+                             Likes count
+                             </Tooltip>}>
+                        <Badge>{obj.attitude}</Badge>
+                        </OverlayTrigger>
+
+                    {this.state.commentsDisplay.expandedComments.includes(count) &&
+                     <div className='comment-content'>
+                     {obj.text}
+                     </div>
+                    }
+                    </ListGroupItem>
+                );
             }
         );
 
@@ -228,7 +260,7 @@ class UserCabinet extends React.Component {
                          Object.keys(password).map((key) => {
                              let state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
                              return (
-                                  <div>
+                                     <div key={key.toString()}>
                                      <CustomField
                                  name={key}
                                  onChange={this.handlePasswordChange}

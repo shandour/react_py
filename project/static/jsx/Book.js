@@ -28,7 +28,7 @@ function bookLinks(books) {
                 </Link>
                   </ListGroupItem>);
         })
-        const list = <ListGroup><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
+        const list = <ListGroup key={l.toString()}><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
         elementsList.push(list);
     }
     return elementsList;
@@ -66,14 +66,14 @@ class Book extends React.Component {
             var authors = book.authors.map(
                 (obj) => {
                     const fullName = obj.surname? obj.surname + ' ' + obj.name: obj.name;
-                    return <Link to={`/authors/${obj.id}`}>{fullName}; </Link>
+                    return <Link to={`/authors/${obj.id}`} key={obj.id.toString()}>{fullName}; </Link>
                 }
             );
 
         return (
                 <div>
                 <PageHeader>{title} <small>dedicated page</small></PageHeader>
-                <h4 class="text-center">A book by {authors}</h4>
+                <h4 className="text-center">A book by {authors}</h4>
                 <div>
                 Spotted an error? Want to add smth? <Link to={`/books/${this.props.match.params.bookId}/edit`}> Please push here!</Link>
                 </div>
@@ -85,7 +85,7 @@ class Book extends React.Component {
                 </Panel>
 
                 <div>
-                <h3 class="text-center">The comment section</h3>
+                <h3 className="text-center">The comment section</h3>
                 <Comments entityType='book' entityId={this.state.book.id}/>
                 </div>
                 </div>

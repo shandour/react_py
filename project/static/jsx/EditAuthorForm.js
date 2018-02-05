@@ -146,13 +146,10 @@ class EditAuthorForm extends React.Component {
 
     handleFilterSuggestions(inputValue, suggestionsArray) {
         const query = inputValue.toLowerCase();
-        console.log(query)
-        console.log(suggestionsArray)
         let filteredSuggestions = suggestionsArray.filter(suggestion =>
                                                           suggestion.slice(0, suggestion.lastIndexOf(';')).
                                                           toLowerCase().
                                                           includes(query));
-        console.log(filteredSuggestions)
         if (filteredSuggestions.length > 0) {
             return filteredSuggestions.map(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')));
         }
@@ -168,7 +165,7 @@ class EditAuthorForm extends React.Component {
                         intermediateFinished: data.finished,
                         lastQuery: query
                     });
-                });
+                }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
             } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
                 fetch(`/api/books-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
@@ -179,7 +176,7 @@ class EditAuthorForm extends React.Component {
                         intermediateFinished: data.finished,
                         lastQuery: query
                     });
-                });
+                }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
             } else {
                 return ['Author not found']
@@ -239,13 +236,13 @@ class EditAuthorForm extends React.Component {
         }
 
         const redirectLink = `/authors/${this.props.match.params.authorId}`;
-        const authorFields = Object.keys(this.state.author).map((d) => {
-            let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;
+        const authorFields = Object.keys(this.state.author).map((k) => {
+            const state = typeof this.state.errors[k] !== 'undefined' ? "error": null;
             return (
-                    <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} value={this.state.author[d]} labelWord={'Enter'} applyBooksRegexFormat={true}/>
-                    {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
-                     <HelpBlock>{this.state.errors[d]}</HelpBlock>
+                <div key={k.toString()}>
+                    <CustomField name={`${k}`} onChange={this.handleChange} validationState={state} value={this.state.author[k]} labelWord={'Enter'} applyBooksRegexFormat={true}/>
+                    {(this.state.errors && typeof this.state.errors[k] !== 'undefined') &&
+                     <HelpBlock>{this.state.errors[k]}</HelpBlock>
                     }
                 </div>
             );

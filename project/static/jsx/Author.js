@@ -21,13 +21,14 @@ function authorLinks(authors) {
     const letters = Object.keys(authors);
     let elementsList = [];
     for (let l of letters) {
-        const letterList = authors[l].map((obj) => {
-            return(
-                    <ListGroupItem key={obj.id}>
-                    <Link to={`/authors/${obj.id}`}>{obj.surname} {obj.name}</Link>
-                  </ListGroupItem>);
-        })
-        const list = <ListGroup><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
+        const letterList = authors[l].map(obj =>
+                                          <ListGroupItem key={obj.id}>
+                                          <Link to={`/authors/${obj.id}`}>
+                                          {obj.surname} {obj.name}
+                                          </Link>
+                                          </ListGroupItem>
+                                         );
+        const list = <ListGroup key={l.toString()}><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
         elementsList.push(list);
     }
     return elementsList;
@@ -54,7 +55,6 @@ class Author extends React.Component {
     }
 
     componentDidMount() {
-        console.log(this.props.location.pageId);
         fetch(`/api/authors/${this.props.match.params.authorId}`).then(results => {
             if (results.status == 404) {
                 this.setState({errorCode404: true});
@@ -97,7 +97,7 @@ class Author extends React.Component {
                     <hr/>
 
                     <div>
-                    <h3 class="text-center">The comment section</h3>
+                    <h3 className="text-center">The comment section</h3>
                     <Comments entityType='author' entityId={this.state.author.id}/>
                     </div>
                     </div>

@@ -12,7 +12,6 @@ import {
 import {
     Nav,
     Navbar,
-    NavItem,
     NavDropdown,
     MenuItem,
     Grid,
@@ -69,12 +68,12 @@ const UserDropdown = (props) => (
         {props.username !== 'guest'
          ?
          <div>
-         <MenuItem><Link to={`/user/cabinet`}>User cabinet</Link></MenuItem>
+         <Link to='/user/cabinet' className='user-dropdown-a'>User cabinet</Link>
          <MenuItem divider />
-         <MenuItem><Link to='/logout'>Logout</Link></MenuItem>
+         <Link to='/logout' className='user-dropdown-a'>Logout</Link>
           </div>
          :
-         <MenuItem><Link to='/login'>Login</Link></MenuItem>
+         <Link to='/login' className='user-dropdown-a'>Login</Link>
         }
         </NavDropdown>
         </Nav>
@@ -139,16 +138,16 @@ class App extends React.Component {
                 <Col md={6} mdOffset={3}>
                 <Navbar.Header>
                 <Navbar.Brand>
-                <NavLink to="/" >Home</NavLink>
+                <NavLink to="/">Home</NavLink>
                 </Navbar.Brand>
                 <Navbar.Toggle />
                 </Navbar.Header>
                 <Navbar.Collapse>
                 <Nav bsStyle="pills" >
-                <li><NavLink to="/books">Books</NavLink></li>
-                <li><NavLink to="/authors">Authors</NavLink></li>
-                <li><NavLink to='/about'>About</NavLink></li>
-                <li><NavLink to='/random'>Random</NavLink></li>
+                <li><NavLink to="/books" activeClassName='active-navlink'>Books</NavLink></li>
+                <li><NavLink to="/authors" activeClassName='active-navlink'>Authors</NavLink></li>
+                <li><NavLink to='/about' activeClassName='active-navlink'>About</NavLink></li>
+                <li><NavLink to='/random' activeClassName='active-navlink'>Random</NavLink></li>
                 </Nav>
                 </Navbar.Collapse>
                 </Col>

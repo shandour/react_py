@@ -63,7 +63,7 @@ from project.db_operations import (
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def super_page(path):
+def index_page(path):
     return render_template('index.html')
 
 @app.route('/api/authors')
@@ -144,7 +144,7 @@ def edit_book(book_id):
 def can_user_edit_entity():
     if not current_user.is_authenticated:
         return Response(status='403')
-    if not (current_user.has_role('admin') or current_user.has_role('editor')):
+    if not (current_user.has_role(ADMIN_ROLE) or current_user.has_role(EDITOR_ROLE)):
         if check_if_user_can_edit_entity(
                 request.args['entity'],
                 request.args['id'],

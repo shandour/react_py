@@ -162,13 +162,13 @@ class Comment extends React.Component {
             );
         }
 
-        let myStyleClass = this.props.shouldFocus ? 'focused-comment' : null;
+        let myStyleClass = this.props.shouldFocus ? 'focused-comment' : 'comment';
 
         return (
                 <div className={myStyleClass}>
 
                 <div className="comment-info">
-                A comment by <span class='username'>{this.props.username}</span>. Created {commentInfo.created_at}.
+                A comment by <span className='username'>{this.props.username}</span>. Created {commentInfo.created_at}.
                 {commentInfo.edited != commentInfo.created_at &&
                  <span> Edited: {commentInfo.edited}</span>
                 }
@@ -379,9 +379,7 @@ class Comments extends React.Component{
                 const disabled = c.current_user_wrote ? false : true;
                 const shouldFocus = location.hash == `#${c.id}` ? true : false;
                 comments.push(
-                        <div class="comment">
                         <Comment key={commentInfo.id.toString()} commentInfo={commentInfo} username={username} handleDeleteComment={this.handleDeleteComment} loggedIn={this.state.loggedIn} entityType={this.props.entityType} countInArray={count} deleteDisabled={disabled} shouldFocus={shouldFocus}/>
-                        </div>
                 );
                 count++;
             }
@@ -420,7 +418,7 @@ class Comments extends React.Component{
                   <FormControl type="submit" value='Add new comment' name="comment-add-button"/>
                     </form>
                     {warning &&
-                     <span class='edit-impossible-warning'>{warning}</span>
+                     <span className='edit-impossible-warning'>{warning}</span>
                     }
 
                 <hr />

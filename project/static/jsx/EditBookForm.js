@@ -67,9 +67,10 @@ class EditBookForm extends React.Component {
                     book['text'] = data['text'];
                     let author_tags = [];
                     for (let a of data['authors']) {
+                        const fullName = typeof a.surname !== 'undefined'? `${a.surname} ${a.name}`: a.name;
                         author_tags.push({
                             id: a.id,
-                            name: a.name
+                            name: fullName
                         });
                     }
                     this.setState({book:book, author_tags:author_tags});
@@ -103,7 +104,6 @@ class EditBookForm extends React.Component {
         fetch(`/api/authors-get-suggestions?q=${query}&amount=${amount}`,
               {credentials: "same-origin"}).then(resp => resp.json()).then(data => {
                   const suggestions = amount == 0 ? data.suggestions : [...this.state.suggestions, ...data.suggestions];
-                  console.log(typeof suggestions)
                   if (query.length > 0) {
                       this.setState({
                           suggestions: suggestions,
@@ -146,13 +146,10 @@ class EditBookForm extends React.Component {
 
     handleFilterSuggestions(inputValue, suggestionsArray) {
         const query = inputValue.toLowerCase();
-        console.log(query)
-        console.log(suggestionsArray)
         let filteredSuggestions = suggestionsArray.filter(suggestion =>
                                                           suggestion.slice(0, suggestion.lastIndexOf(';')).
                                                           toLowerCase().
                                                           includes(query));
-        console.log(filteredSuggestions)
         if (filteredSuggestions.length > 0) {
             return filteredSuggestions.map(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')));
         }
@@ -168,9 +165,9 @@ class EditBookForm extends React.Component {
                         intermediateFinished: data.finished,
                         lastQuery: query
                     });
-                });
+                }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
-            } else if (filteredSuggestions.length == 0 && this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+            } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
                 fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
                     results => results.json()
                 ).then(data => {
@@ -179,7 +176,7 @@ class EditBookForm extends React.Component {
                         intermediateFinished: data.finished,
                         lastQuery: query
                     });
-                });
+                }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
             } else {
                 return ['Author not found']
@@ -239,15 +236,15 @@ class EditBookForm extends React.Component {
         }
 
         const redirectLink = `/books/${this.props.match.params.bookId}`;
-        const bookFields = Object.keys(this.state.book).map((d) => {
-            let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;
-            let fieldClass = d == 'text' ? 'textarea' : 'input';
+        const bookFields = Object.keys(this.state.book).map((k) => {
+            const state = typeof this.state.errors[k] !== 'undefined' ? "error": null;
+            const fieldClass = k == 'text' ? 'textarea' : 'input';
 
             return (
-                    <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} value={this.state.book[d]} componentClass={fieldClass} labelWord={'Enter'} applyBooksRegexFormat={true}/>
-                    {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
-                     <HelpBlock>{this.state.errors[d]}</HelpBlock>
+                    <div key={k.toString()}>
+                    <CustomField name={`${k}`} onChange={this.handleChange} validationState={state} value={this.state.book[k]} componentClass={fieldClass} labelWord={'Enter'} applyBooksRegexFormat={true}/>
+                    {(this.state.errors && typeof this.state.errors[k] !== 'undefined') &&
+                     <HelpBlock>{this.state.errors[k]}</HelpBlock>
                     }
                 </div>
             );

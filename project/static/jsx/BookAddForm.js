@@ -109,16 +109,13 @@ class BookAddForm extends React.Component {
         });
         this.setState({author_tags: tags});
     }
-//FIX!
+
     handleFilterSuggestions(inputValue, suggestionsArray) {
         const query = inputValue.toLowerCase();
-        console.log(query)
-        console.log(suggestionsArray)
         let filteredSuggestions = suggestionsArray.filter(suggestion =>
                                                           suggestion.slice(0, suggestion.lastIndexOf(';')).
                                                           toLowerCase().
                                                           includes(query));
-        console.log(filteredSuggestions)
         if (filteredSuggestions.length > 0) {
             return filteredSuggestions.map(suggestion => suggestion.slice(0, suggestion.lastIndexOf(';')));
         }
@@ -134,11 +131,9 @@ class BookAddForm extends React.Component {
                         intermediateFinished: data.finished,
                         lastQuery: query
                     });
-                    console.log('setState' + this.state.suggestions)
-                });
-                console.log('after setState' + this.state.suggestions)
+                }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
-            } else if (filteredSuggestions.length == 0 && this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
+            } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
                 fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
                     results => results.json()
                 ).then(data => {
@@ -147,7 +142,7 @@ class BookAddForm extends React.Component {
                         intermediateFinished: data.finished,
                         lastQuery: query
                     });
-                });
+                }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
             } else {
                 return ['Author not found']
@@ -193,15 +188,15 @@ class BookAddForm extends React.Component {
 
         const {author_tags, suggestions, successStatus} = this.state;
 
-        const bookFields = Object.keys(this.state.book).map((d) => {
-            let state = typeof this.state.errors[d] !== 'undefined' ? "error": null;
-            let fieldClass = d == 'text' ? 'textarea' : 'input';
+        const bookFields = Object.keys(this.state.book).map((k) => {
+            const state = typeof this.state.errors[k] !== 'undefined' ? "error": null;
+            const fieldClass = k == 'text' ? 'textarea' : 'input';
 
             return (
-                    <div>
-                    <CustomField name={`${d}`} onChange={this.handleChange} validationState={state} componentClass={fieldClass}/>
-                    {(this.state.errors && typeof this.state.errors[d] !== 'undefined') &&
-                     <HelpBlock>{this.state.errors[d]}</HelpBlock>
+                    <div key={k.toString()}>
+                    <CustomField name={`${k}`} onChange={this.handleChange} validationState={state} componentClass={fieldClass}/>
+                    {(this.state.errors && typeof this.state.errors[k] !== 'undefined') &&
+                     <HelpBlock>{this.state.errors[k]}</HelpBlock>
                     }
                 </div>
             );

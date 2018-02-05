@@ -59,17 +59,21 @@ class RegisterUser extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        const req = new Request('/api/register', {method: 'POST', credentials: 'same-origin', headers: myHeaders, body: new URLSearchParams(bodyObj)});
+        const req = new Request('/api/register',
+                                {method: 'POST',
+                                 credentials: 'same-origin',
+                                 headers: myHeaders,
+                                 body: new URLSearchParams(bodyObj)}
+                               );
         fetch(req).then(resp => {
             if (resp.ok) {
                 this.setState({successStatus: true});
                 this.props.handleLogin();
-                return;
             } else {
                 return resp.json().then(data => {
                     this.setState({errors: data})});
             }
-        });
+        }).catch(err => {console.log('The application has encountered an error while trying to register a new user')});
     }
 
     render () {
@@ -79,11 +83,11 @@ class RegisterUser extends React.Component {
             return(<Redirect to="/"/>);
         }
 
-        const inputFields =  Object.keys(inputData).map((key) => {
-            let state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
-            let type = key == 'password' || key == 'password_confirm'? 'password': 'text';
+        const inputFields =  Object.keys(inputData).map(key => {
+            const state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
+            const type = key == 'password' || key == 'password_confirm'? 'password': 'text';
             return (
-                    <div>
+                    <div key={key.toString()}>
                     <CustomField name={`${key}`} onChange={this.handleChange} validationState={state} type={type} labelWord={'Confirm'}/>
                     <HelpBlock>
                     {typeof errors[key] !== 'undefined' && errors[key].length > 0 &&

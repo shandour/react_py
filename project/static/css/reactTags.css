@@ -4,8 +4,9 @@ div.ReactTags__tags {
 }
 
 /* Styles for the input */
+/* SET WIDTH TO 40% FOR THE FIELD TO LOOK BETTER */
 div.ReactTags__tagInput {
-    width: 200px;
+    width: 40%;
     border-radius: 2px;
     display: inline-block;
 }
@@ -39,11 +40,12 @@ div.ReactTags__selected a.ReactTags__remove {
 div.ReactTags__suggestions {
     position: absolute;
 }
+/* SET WIDTH TO 400px TO PREVENT LONG BOOK TITLE FROM GOING OUTSIDE THE LIs */
 div.ReactTags__suggestions ul {
     list-style-type: none;
     box-shadow: .05em .01em .5em rgba(0,0,0,.2);
     background: white;
-    width: 200px;
+    width: 400px;
 }
 div.ReactTags__suggestions li {
     border-bottom: 1px solid #ddd;

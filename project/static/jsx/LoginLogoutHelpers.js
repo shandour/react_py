@@ -89,17 +89,21 @@ class Login extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        const req = new Request('/api/login', {method: 'POST', credentials: 'same-origin', headers: myHeaders, body: new URLSearchParams(bodyObj)});
+        const req = new Request('/api/login',
+                                {method: 'POST',
+                                 credentials: 'same-origin',
+                                 headers: myHeaders,
+                                 body: new URLSearchParams(bodyObj)}
+                               );
         fetch(req).then(resp => {
             if (resp.ok) {
                 this.setState({successStatus: true});
                 this.props.handleLogin();
-                return;
             } else {
                 return resp.json().then(data => {
                     this.setState({errors: data})});
             }
-        });
+        }).catch(err => {console.log('The application has encountered an error while trying to log you in')});
     }
 
     render () {
@@ -109,19 +113,19 @@ class Login extends React.Component {
             return(<Redirect to="/"/>);
         }
 
-        const inputFields = Object.keys(inputData).map((key) => {
-            let state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
-            let type = key == 'password'? 'password': 'text';
+        const inputFields = Object.keys(inputData).map(key => {
+            const state = typeof errors[key] !== 'undefined' && errors[key].length > 0 ? 'error' : null;
+            const type = key == 'password'? 'password': 'text';
             if (key == 'remember') {
-                let checked = inputData['remember'] == 'n' ? false : true;
+                const checked = inputData['remember'] == 'n' ? false : true;
                 return (
-                        <FormGroup>
+                        <FormGroup key={key.toString()}>
                         <Checkbox onClick={this.handleChange} name='checkbox' validationState={state} checked={checked}>Remember me</Checkbox>
                         </FormGroup>
                 );
             }
                         return (
-                                <div>
+                                <div key={key.toString()}>
                                 <CustomField name={`${key}`} onChange={this.handleChange} validationState={state} type={type}/>
                                 <HelpBlock>
                                 {typeof errors[key] !== 'undefined' && errors[key].length > 0 &&
