@@ -46,6 +46,7 @@ class Author(db.Model):
                     surname=self.surname,
                     description=self.description[:20])
 
+
 class Book(db.Model):
     __tablename__ = 'books'
 
@@ -66,7 +67,6 @@ class Book(db.Model):
 
 
 # COMMENTS functionality
-
 class CommentsMixIn(object):
     id = db.Column(db.Integer, primary_key=True)
     topic = db.Column(db.String(1000))
@@ -75,17 +75,20 @@ class CommentsMixIn(object):
     created_at = db.Column(db.DateTime(), default=datetime.utcnow, index=True)
     edited = db.Column(db.DateTime(), index=True)
 
+
 class BookComment(db.Model, CommentsMixIn):
     __tablename__ = 'book_comments'
 
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
+
 class AuthorComment(db.Model, CommentsMixIn):
     __tablename__ = 'author_comments'
 
     author_id = db.Column(db.Integer, db.ForeignKey('authors.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
 
 author_comments_users_like = db.Table(
     'author_comments_users_like',
@@ -99,6 +102,7 @@ author_comments_users_like = db.Table(
               primary_key=True),
 )
 
+
 author_comments_users_dislike = db.Table(
     'author_comments_users_dislike',
     db.Column('user_id', db.Integer,
@@ -109,6 +113,7 @@ author_comments_users_dislike = db.Table(
               db.ForeignKey('author_comments.id'),
               primary_key=True),
 )
+
 
 book_comments_users_like = db.Table(
     'book_comments_users_like',
@@ -121,6 +126,7 @@ book_comments_users_like = db.Table(
               db.ForeignKey('book_comments.id'),
               primary_key=True),
 )
+
 
 book_comments_users_dislike = db.Table(
     'book_comments_users_dislike',
@@ -136,13 +142,13 @@ book_comments_users_dislike = db.Table(
 
 
 # FLASK SECURITY functionality
-
 users_roles = db.Table(
     'users_roles',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'),
               primary_key=True),
     db.Column('role_id', db.Integer, db.ForeignKey('roles.id'),
               primary_key=True))
+
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -194,7 +200,6 @@ class Role(db.Model, RoleMixin):
 
 
 #INDICES
-
 #comments_indices; effectiveness checked on sets of comments larger than 100000
 db.Index('idx_authorcomments_edited_user_id',
          AuthorComment.edited,

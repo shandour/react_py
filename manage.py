@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 from flask_script import Manager, Server
-from flask_security.utils import hash_password
 
 from project import create_app
 from project.models import db, User, Role
-from project.security import ADMIN_ROLE, EDITOR_ROLE
+from project.security import ADMIN_ROLE, EDITOR_ROLE, user_datastore
 from create_fixtures import create_fixtures as cf
 
 
@@ -40,10 +39,10 @@ def add_user(username, email, password, role=None):
     "Creates an admin, an editor a basic level (if role is None) user"
     message = ''
 
-    user = User(
+    user = user_datastore.create_user(
         username=username,
         email=email,
-        password=hash_password(password),
+        password=password,
         active=True
     )
 
@@ -57,7 +56,6 @@ def add_user(username, email, password, role=None):
     else:
         message = 'User created'
 
-    db.session.add(user)
     db.session.commit()
     return message
 
