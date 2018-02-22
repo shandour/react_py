@@ -1,7 +1,5 @@
 import React from 'react';
-
 import {Redirect} from 'react-router-dom';
-
 import {
     PageHeader,
     FormGroup,
@@ -46,7 +44,10 @@ function getBookFields() {
         }
 
         bookFields.push(
-                <Button key={`${counter}-remove-button`} onClick={this.removeBook} id={counter.toString()} className='remove-book-button'>
+                <Button key={`${counter}-remove-button`}
+            onClick={this.removeBook}
+            id={counter.toString()}
+            className='remove-book-button'>
                 Remove book
             </Button>);
         counter++;
@@ -84,7 +85,10 @@ class AuthorAddForm extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
+        let options = {method: 'POST',
+                       body: new URLSearchParams(bodyObj),
+                       headers: myHeaders,
+                       credentials: "same-origin"};
         let req = new Request('/api/authors/add', options);
         fetch(req).then(resp => resp.json()).then(data => {
             this.setState({errors: data});
@@ -108,7 +112,11 @@ class AuthorAddForm extends React.Component {
     addBook (e) {
         let {books, booksCounter} = this.state;
         let num = books.length;
-        books.push({['books-' + num + "-title"]:'', ['books-' + num + "-overview"]: '', ['books-' + num + "-content"]: ''});
+        books.push({
+            ['books-' + num + "-title"]:'',
+            ['books-' + num + "-overview"]: '',
+            ['books-' + num + "-content"]: ''
+        });
         this.setState({
             books: books,
             booksCounter: booksCounter + 1

@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
     FormGroup,
     ControlLabel,
@@ -43,6 +42,3 @@ function CustomField (props) {
 
 
 export {CustomField};
-
-
-//TODO: import this everywhere

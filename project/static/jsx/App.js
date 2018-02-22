@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
     BrowserRouter as Router,
     Route,
@@ -8,7 +7,6 @@ import {
     Switch,
     Redirect
 } from 'react-router-dom';
-
 import {
     Nav,
     Navbar,
@@ -23,25 +21,15 @@ import {
 import loremIpsum from 'lorem-ipsum';
 
 import {Author, Authors} from './Author.js';
-
 import {Book, Books} from './Book.js';
-
 import {AuthorAddForm} from './AuthorAddForm.js';
-
 import {BookAddForm} from './BookAddForm.js';
-
 import {EditAuthorForm} from './EditAuthorForm.js';
-
 import {EditBookForm} from './EditBookForm.js';
-
 import {Random} from './Random.js';
-
 import {Code404Error} from './Code404Error.js';
-
 import {Logout, Login} from './LoginLogoutHelpers.js';
-
 import {RegisterUser} from './RegisterUser.js';
-
 import {UserCabinet} from './UserCabinet.js'
 
 

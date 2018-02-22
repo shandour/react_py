@@ -1,11 +1,9 @@
 import React from 'react';
-
 import {
     ButtonGroup,
     Button,
     Image
 } from 'react-bootstrap';
-
 import {Link} from 'react-router-dom';
 
 

@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 from flask_script import Manager, Server
+from flask_security.utils import hash_password
 
 from project import create_app
+from project.models import db, User, Role
+from project.security import ADMIN_ROLE, EDITOR_ROLE
+from create_fixtures import create_fixtures as cf
+
 
 manager = Manager(create_app)
 
@@ -10,11 +15,8 @@ manager = Manager(create_app)
 def create_db():
     "Creates the database"
 
-    from project.models import db, Role
-
     db.create_all()
 
-    from project.security import ADMIN_ROLE, EDITOR_ROLE
     db.session.add_all(
         [Role(name=ADMIN_ROLE, description='The site Deity'),
          Role(name=EDITOR_ROLE, description='Can add and edit items')]
@@ -25,8 +27,6 @@ def create_db():
 @manager.command
 def drop_db():
     "Drops the database"
-
-    from project.models import db
 
     db.drop_all()
 
@@ -40,9 +40,12 @@ def add_user(username, email, password, role=None):
     "Creates an admin, an editor a basic level (if role is None) user"
     message = ''
 
-    from project.models import db, User, Role
-    from project.security import ADMIN_ROLE, EDITOR_ROLE
-    user = User(username=username, email=email, password=password)
+    user = User(
+        username=username,
+        email=email,
+        password=hash_password(password),
+        active=True
+    )
 
     if role:
         if role.lower() == EDITOR_ROLE.lower():
@@ -77,8 +80,6 @@ def create_fixtures(iteration_number=1,
                     max_comments_per_entity=100,
                     randomized_max_number=False):
     "Creates fixtures"
-    from create_fixtures import create_fixtures as cf
-
     cf(int(iteration_number),
        int(users_number),
        int(max_comments_per_entity),

@@ -34,7 +34,7 @@ class Author(db.Model):
     surname_tsvector = column_property(func.to_tsvector('simple', surname))
 
     books = db.relationship('Book', secondary=authors_books,
-                            backref='authors')
+                            backref='authors', lazy='joined')
 
     book_count = db.Column(db.Integer, default=0, index=True)
 
@@ -152,9 +152,9 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(130))
     active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime(), default=datetime.now())
+    confirmed_at = db.Column(db.DateTime(), default=datetime.utcnow)
     roles = db.relationship('Role', secondary=users_roles,
-                            backref='users')
+                            backref='users', lazy='joined')
     author_comments = db.relationship('AuthorComment', backref='user')
     authors_added = db.relationship('Author', backref='user')
     book_comments = db.relationship('BookComment', backref='user')

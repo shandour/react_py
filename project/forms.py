@@ -1,6 +1,5 @@
 from wtforms import (StringField, TextAreaField, FieldList, FormField,
                      validators, Form, Field, ValidationError)
-from wtforms.widgets import TextInput
 from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm, LoginForm
 
@@ -10,12 +9,19 @@ from flask_wtf.csrf import CSRFProtect
 
 csrf = CSRFProtect()
 
+ # a tweaked StringField that strips values to exclude
+ # incorrect addition, editing and sorting behaviour
+class CleanStringField(StringField):
+    def process_formdata(self, valuelist):
+        super(CleanStringField, self).process_formdata(valuelist)
+        self.data = self.data.strip()
+
 class AddCommentForm(FlaskForm):
-    topic = StringField('Topic', [validators.Optional()])
+    topic = CleanStringField('Topic', [validators.Optional()])
     text = TextAreaField('Text', [validators.InputRequired()])
 
 class SimpleBookForm(Form):
-    title = StringField('Title', [validators.Length(max=200),
+    title = CleanStringField('Title', [validators.Length(max=200),
                                   validators.InputRequired()])
     overview = TextAreaField('Description', [validators.Optional(),
                                              validators.Length(max=2000)])
@@ -23,9 +29,9 @@ class SimpleBookForm(Form):
 
 
 class AddAuthorForm(FlaskForm):
-    first_name = StringField('First name', [validators.Length(max=50),
+    first_name = CleanStringField('First name', [validators.Length(max=50),
                                             validators.InputRequired()])
-    last_name = StringField('Last name', [validators.Length(max=50),
+    last_name = CleanStringField('Last name', [validators.Length(max=50),
                                           validators.Optional()])
     description = TextAreaField('Description', [validators.Optional(),
                                                 validators.Length(max=2000)])
@@ -60,9 +66,9 @@ class AddAuthorForm(FlaskForm):
 
 
 class EditAuthorForm(FlaskForm):
-    first_name = StringField('First name', [validators.Length(max=50),
+    first_name = CleanStringField('First name', [validators.Length(max=50),
                                       validators.InputRequired()])
-    last_name = StringField('Last name', [validators.Length(max=50),
+    last_name = CleanStringField('Last name', [validators.Length(max=50),
                                         validators.Optional()])
     description = TextAreaField('Description', [validators.Optional(),
                                                 validators.Length(max=2000)])
@@ -74,7 +80,7 @@ class EditAuthorForm(FlaskForm):
 
 
 class AddBookForm(FlaskForm):
-    title = StringField('Title', [validators.Length(max=200),
+    title = CleanStringField('Title', [validators.Length(max=200),
                                   validators.InputRequired()])
     description = TextAreaField('Description', [validators.Optional(),
                                                 validators.Length(max=2000)])
@@ -89,7 +95,7 @@ class AddBookForm(FlaskForm):
 
 
 class CommentForm(FlaskForm):
-    topic = StringField('Topic',
+    topic = CleanStringField('Topic',
                         [validators.Optional(),
                          validators.Length(max=500)])
     text = TextAreaField('Text', [validators.InputRequired()])
@@ -97,5 +103,5 @@ class CommentForm(FlaskForm):
 
 # security forms
 class UpgradedRegisterForm(RegisterForm):
-    username = StringField('Username', [validators.Length(max=100),
+    username = CleanStringField('Username', [validators.Length(max=100),
                                         validators.InputRequired()])

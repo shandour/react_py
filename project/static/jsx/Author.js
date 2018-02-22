@@ -1,25 +1,33 @@
 import React from 'react';
-
 import {
     Route,
     Link
 } from 'react-router-dom';
-
 import {
     Panel,
     ListGroup,
     ListGroupItem,
-    PageHeader
+    PageHeader,
+    Button
 } from 'react-bootstrap';
 
 import {Code404Error} from './Code404Error.js';
-
 import {Comments} from './Comments.js';
 
 
 function authorLinks(authors) {
     const letters = Object.keys(authors);
     let elementsList = [];
+    const lettered_buttons = (
+            <div>
+            {
+                letters.map(l =>
+                            <Button className="letter-buttons" bsStyle="link" href={`#${l}`}>{l}</Button>
+                           )
+            }
+        </div>
+    );
+
     for (let l of letters) {
         const letterList = authors[l].map(obj =>
                                           <ListGroupItem key={obj.id}>
@@ -28,9 +36,12 @@ function authorLinks(authors) {
                                           </Link>
                                           </ListGroupItem>
                                          );
-        const list = <ListGroup key={l.toString()}><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
+        const list = <ListGroup key={l.toString()}><ListGroupItem header={l} id={l}>{letterList}</ListGroupItem></ListGroup>;
         elementsList.push(list);
     }
+
+    elementsList.unshift(lettered_buttons);
+
     return elementsList;
 }
 

@@ -1,11 +1,6 @@
 import React from 'react'
-
 import {WithContext as ReactTags} from 'react-tag-input';
-
 import {Redirect} from 'react-router-dom'
-
-import {Code404Error} from './Code404Error.js'
-
 import {
     PageHeader,
     FormGroup,
@@ -15,6 +10,7 @@ import {
     Button
 } from 'react-bootstrap'
 
+import {Code404Error} from './Code404Error.js'
 import {CustomField} from './CustomInputField.js'
 
 

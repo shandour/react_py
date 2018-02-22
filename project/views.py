@@ -6,27 +6,19 @@ from flask import (
     Response,
     after_this_request
 )
-
 from flask_security import (
     current_user,
     logout_user,
     login_user,
     LoginForm
 )
-
 from flask_security.views import _commit
-
 from flask_security.forms import ChangePasswordForm
-
 from flask_security.decorators import anonymous_user_required
-
 from flask_security.registerable import register_user
-
 from flask_security.changeable import change_user_password
 
-
 from project.security import ADMIN_ROLE, EDITOR_ROLE
-
 from project.forms import (
     AddAuthorForm,
     AddBookForm,
@@ -35,7 +27,6 @@ from project.forms import (
     CommentForm,
     UpgradedRegisterForm
 )
-
 from project.db_operations import (
     get_all_authors_with_sections,
     get_author_by_id,
@@ -66,16 +57,19 @@ from project.db_operations import (
 def index_page(path):
     return render_template('index.html')
 
+
 @app.route('/api/authors')
 def authors():
     authors = get_all_authors_with_sections()
     resp = jsonify(authors)
     return resp
 
+
 @app.route('/api/authors/<int:author_id>')
 def show_author(author_id):
     author = jsonify(get_author_by_id(author_id))
     return author
+
 
 @app.route('/api/authors/add', methods=['GET', 'POST'])
 def add_author():
@@ -90,6 +84,7 @@ def add_author():
         errors = form.get_dict_errors()
         return jsonify(errors)
 
+
 @app.route('/api/edit-author/<int:author_id>', methods=['GET', 'POST'])
 def edit_author(author_id):
     if not current_user.is_authenticated:
@@ -103,16 +98,19 @@ def edit_author(author_id):
         errors = form.errors
         return jsonify(errors)
 
+
 @app.route('/api/books')
 def books():
     books = get_all_books_with_sections()
     resp = jsonify(books)
     return resp
 
+
 @app.route('/api/books/<int:book_id>')
 def show_book(book_id):
     book = jsonify(get_book_by_id(book_id))
     return book
+
 
 @app.route('/api/books/add', methods=['GET', 'POST'])
 def add_book():
@@ -127,6 +125,7 @@ def add_book():
         errors = form.errors
         return jsonify(errors)
 
+
 @app.route('/api/edit-book/<int:book_id>', methods=['GET', 'POST'])
 def edit_book(book_id):
     if not current_user.is_authenticated:
@@ -139,6 +138,7 @@ def edit_book(book_id):
     else:
         errors = form.errors
         return jsonify(errors)
+
 
 @app.route('/api/can-user-edit-entity')
 def can_user_edit_entity():
@@ -163,6 +163,7 @@ def authors_initial_suggestions():
         initial = suggestions_initial('authors')
         return jsonify(initial)
 
+
 @app.route('/api/authors-get-suggestions')
 def authors_get_suggestions():
         current_amount = request.args.get('amount')
@@ -170,10 +171,12 @@ def authors_get_suggestions():
         new_info = get_suggestions(query, 'authors', current_amount)
         return jsonify(new_info)
 
+
 @app.route('/api/books-initial-suggestions')
 def books_initial_suggestions():
         initial = suggestions_initial('books')
         return jsonify(initial)
+
 
 @app.route('/api/books-get-suggestions')
 def books_get_suggestions():
@@ -197,6 +200,7 @@ def is_user_logged_in(info=None):
         return resp
     else:
         return Response(status='200')
+
 
 #LOGOUT ASSISTANT
 @app.route('/api/logout')
@@ -311,6 +315,7 @@ def can_user_edit():
         resp.status = '200'
         return resp
 
+
 #check user identity: returns True if user is logged-in, wrote the comment or is admin
 def check_user_identity(comment_id, comment_type):
     return (current_user.is_authenticated
@@ -353,6 +358,7 @@ def register():
         resp.status = '401'
         return resp
 
+
 #custom change password mechanism
 @app.route('/api/change-password', methods=['GET', 'POST'])
 def change_password():
@@ -368,6 +374,7 @@ def change_password():
         resp = jsonify(form.errors)
         resp.status = '401'
         return resp
+
 
 @app.route('/api/get-user-comments')
 def get_user_comments_sorted():

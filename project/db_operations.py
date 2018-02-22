@@ -1,27 +1,38 @@
 # -*- coding: utf-8 -*-
-from collections import OrderedDict
-
 import datetime
+
+from sortedcontainers import SortedDict, SortedListWithKey
+from flask import current_app as app
+from sqlalchemy.orm import joinedload
 
 from project.models import Author, Book, AuthorComment, BookComment, User, db
 
-from flask import abort, current_app as app
 
-
-def get_all_authors_with_sections(page=1):
-    """Returns an OrderedDict of first name letters of corresponding authors"""
-    authors = Author.query.order_by(db.asc(Author.surname),
-                                    db.asc(Author.name)).all()
-    d = OrderedDict()
+def get_all_authors_with_sections():
+    """Returns a SortedDict of last name letters of corresponding authors"""
+    authors = Author.query.all()
+ 
+    d = SortedDict()
     for a in authors:
         first_letter = a.surname[0].upper() if a.surname else a.name[0].upper()
         if first_letter not in d:
-            d[first_letter] = []
-        d[first_letter].append(dict(id=a.id, name=a.name, surname=a.surname))
+            d[first_letter] = SortedListWithKey(
+                key=lambda a: (
+                    (a['surname'] + a['name']).lower()
+                    if a['surname'] else a['name'].lower()
+                ))
+        d[first_letter].add({'id': a.id,
+                             'name': a.name,
+                             'surname': a.surname})
+
+    #required to make SortedListWithKey JSON serializable
+    for letter in d:
+        d[letter] = list(d[letter])
 
     authors_dict = {'authors': d}
 
     return authors_dict
+
 
 def get_author_by_id(id=None):
     """Returns an author by id or aborts with 404"""
@@ -37,6 +48,7 @@ def get_author_by_id(id=None):
         ])
     )
     return author
+
 
 def get_book_by_id(id=None):
     """Returns a book by id or aborts with 404"""
@@ -57,6 +69,7 @@ def get_book_by_id(id=None):
     )
     return book
 
+
 #for comments invoke the get by sort option function
 def get_user_by_id(sort_dict, user_id=None):
     user = User.query.get_or_404(user_id)
@@ -74,13 +87,13 @@ def get_user_by_id(sort_dict, user_id=None):
         }
     }
 
+
 def sort_user_comments(sort_dict, user_id=None):
-    user = User.query.get_or_404(user_id)
     comments_per_page = app.config['USER_CABINET_PAGINATION_PER_PAGE']
     comments_type = (AuthorComment if sort_dict['comments_type'] == 'authors'
                      else BookComment)
     comments_query = (comments_type.query
-                        .filter(comments_type.user_id == user.id))
+                        .filter(comments_type.user_id == user_id))
 
     if sort_dict['sort_option'] == 'most-popular':
         sort_query = (comments_type.likes_count.asc()
@@ -136,25 +149,32 @@ def sort_user_comments(sort_dict, user_id=None):
 
 def get_all_books_with_sections():
     """Returns an OrderedDict of first name letters of corresponding books"""
-    books = Book.query.order_by(db.asc(Book.title)).all()
-    d = OrderedDict()
+    books = Book.query.options(joinedload(Book.authors)).order_by(Book.title.asc()).all()
+    d = SortedDict()
     for b in books:
         first_letter = b.title[0].upper()
         if first_letter not in d:
-            d[first_letter] = []
-        d[first_letter].append(dict(
-            id=b.id,
-            title=b.title,
-            authors=[
-                [a.name, a. surname] if a.surname
-                else [a.name]
-                for a in b.authors
-            ]
-        ))
+            d[first_letter] = SortedListWithKey(key=lambda b: b['title'])
+            d[first_letter].add(
+                {
+                    'id': b.id,
+                    'title': b.title,
+                    'authors': [
+                        [a.name, a. surname] if a.surname
+                        else [a.name]
+                        for a in b.authors
+                    ]
+                }
+            )
+
+    # required to make SortedListWithKey JSON serializable
+    for letter in d:
+        d[letter] = list(d[letter])
 
     books_dict = {'books': d}
 
     return books_dict
+
 
 def create_anonymous_author():
     author = Author(
@@ -164,6 +184,7 @@ def create_anonymous_author():
     db.session.add(author)
     db.session.commit()
     return author
+
 
 def add_book(form, user_id):
     new_book = Book()
@@ -278,7 +299,6 @@ def update_comment(comment_id, comment_type, form):
         return False
 
 
-
 #FORM VALIDATION HELPERS
 def check_if_author_exists(data):
     for author in data:
@@ -345,6 +365,7 @@ def suggestions_initial(suggestion_type):
                                         initial_suggestions)],
                 'finished': False
             }
+
 
 def get_suggestions(query, suggestion_type, amount=None):
     limited_number = app.config['SUGGESTIONS_PER_QUERY']
@@ -471,6 +492,7 @@ def get_all_author_comments_by_author_id(
 
     return comments_dict
 
+
 def get_all_book_comments_by_book_id(
         book_id,
         user_id=None,
@@ -538,6 +560,7 @@ def get_all_book_comments_by_book_id(
 
     return comments_dict
 
+
 def add_comment (form, user_id, comment_type, entity_id):
     if comment_type.lower() == 'author':
         comment = AuthorComment()
@@ -582,6 +605,7 @@ def add_comment (form, user_id, comment_type, entity_id):
         }
     else:
         return False
+
 
 def react_to_comment(attitude, comment_type, comment_id, user_id):
     if attitude.lower() == 'like':
@@ -715,6 +739,7 @@ def react_to_comment(attitude, comment_type, comment_id, user_id):
     else:
         return False
 
+
 def delete_comment(comment_type, comment_id):
     if comment_type.lower() == 'author':
         author_comment_to_delete = AuthorComment.query.get(comment_id)
@@ -736,6 +761,7 @@ def check_if_user_wrote_comment(user_id, comment_id, comment_type):
         if comment_type.lower() == 'author'
         else user_id == BookComment.query.get(comment_id).user_id
     )
+
 
 def check_if_user_can_edit_entity(entity_type, entity_id, user_id):
     if entity_type == 'author':

@@ -1,9 +1,6 @@
 import React from 'react';
-
 import { WithContext as ReactTags } from 'react-tag-input';
-
 import {Redirect, Link} from 'react-router-dom';
-
 import {
     PageHeader,
     FormGroup,

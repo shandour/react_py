@@ -1,24 +1,32 @@
 import React from 'react';
-
 import {
     Link
 } from 'react-router-dom';
-
 import {
     Panel,
     ListGroup,
     ListGroupItem,
-    PageHeader
+    PageHeader,
+    Button
 } from 'react-bootstrap';
 
 import {Code404Error} from './Code404Error.js';
-
 import {Comments} from './Comments.js';
 
 
 function bookLinks(books) {
     const letters = Object.keys(books);
     let elementsList = [];
+    const lettered_buttons = (
+            <div>
+            {
+                letters.map(l =>
+                            <Button className="letter-buttons" bsStyle="link" href={`#${l}`}>{l}</Button>
+                           )
+            }
+        </div>
+    );
+
     for (let l of letters) {
         const letterList = books[l].map((obj) => {
             return(
@@ -28,9 +36,12 @@ function bookLinks(books) {
                 </Link>
                   </ListGroupItem>);
         })
-        const list = <ListGroup key={l.toString()}><ListGroupItem header={l}>{letterList}</ListGroupItem></ListGroup>;
+        const list = <ListGroup key={l.toString()}><ListGroupItem header={l} id={l}>{letterList}</ListGroupItem></ListGroup>;
         elementsList.push(list);
     }
+
+    elementsList.unshift(lettered_buttons);
+
     return elementsList;
 }
 
