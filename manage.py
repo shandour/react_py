@@ -30,12 +30,11 @@ def drop_db():
     db.drop_all()
 
 
-@manager.command
 @manager.option('-u', '--username', dest='username')
 @manager.option('-e', '--email', dest='email')
 @manager.option('-p', '--password', dest='password')
-@manager.option('-r', '--role', dest='role')
-def add_user(username, email, password, role=None):
+@manager.option('-r', '--role', dest='role', default=None)
+def add_user(username, email, password, role):
     "Creates an admin, an editor a basic level (if role is None) user"
     message = ''
 
@@ -60,28 +59,30 @@ def add_user(username, email, password, role=None):
     return message
 
 
-@manager.command
 @manager.option('-i', '--iteration_number',
                 dest='iteration_number',
-                type=int)
+                type=int,
+                default=1)
 @manager.option('-u', '--users_number',
                 dest='users_number',
-                type=int)
+                type=int,
+                default=10)
 @manager.option('-m', '--max_comments',
                 dest='max_comments_per_entity',
-                type=int)
+                type=int,
+                default=10)
 @manager.option('-r', '--randomize_max_comments',
                 dest='randomized_max_number',
                 action='store_true')
-def create_fixtures(iteration_number=1,
-                    users_number=10,
-                    max_comments_per_entity=100,
-                    randomized_max_number=False):
+def create_fixtures(iteration_number,
+                    users_number,
+                    max_comments_per_entity,
+                    randomized_max_number):
     "Creates fixtures"
-    cf(int(iteration_number),
-       int(users_number),
-       int(max_comments_per_entity),
-       int(randomized_max_number))
+    cf(iteration_number,
+       users_number,
+       max_comments_per_entity,
+       randomized_max_number)
 
 
 manager.add_command('runserver', Server())
