@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-from flask_script import Manager, Server
+import click
 
 from project import create_app
 from project.models import db, User, Role
 from project.security import ADMIN_ROLE, EDITOR_ROLE, user_datastore
 from create_fixtures import create_fixtures as cf
 
+app = create_app()
 
-manager = Manager(create_app)
-
-
-@manager.command
+@app.cli.command()
+@click.confirmation_option(
+    help='This action will create a new database. Are you sure?')
 def create_db():
     "Creates the database"
 
@@ -23,17 +23,20 @@ def create_db():
     db.session.commit()
 
 
-@manager.command
+@app.cli.command()
+@click.confirmation_option(
+    help='This action will drop the database. Are you sure?')
 def drop_db():
     "Drops the database"
 
     db.drop_all()
 
 
-@manager.option('-u', '--username', dest='username')
-@manager.option('-e', '--email', dest='email')
-@manager.option('-p', '--password', dest='password')
-@manager.option('-r', '--role', dest='role', default=None)
+@app.cli.command()
+@click.argument('username')
+@click.argument('email')
+@click.argument('password')
+@click.option('--role', '-r', default=None)
 def add_user(username, email, password, role):
     "Creates an admin, an editor a basic level (if role is None) user"
     message = ''
@@ -56,24 +59,23 @@ def add_user(username, email, password, role):
         message = 'User created'
 
     db.session.commit()
-    return message
+    click.echo(message)
 
 
-@manager.option('-i', '--iteration_number',
-                dest='iteration_number',
+@app.cli.command()
+@click.option('-i', '--iteration_number',
                 type=int,
                 default=1)
-@manager.option('-u', '--users_number',
-                dest='users_number',
+@click.option('-u', '--users_number',
                 type=int,
                 default=10)
-@manager.option('-m', '--max_comments',
-                dest='max_comments_per_entity',
+@click.option('-m', '--max_comments_per_entity',
                 type=int,
                 default=10)
-@manager.option('-r', '--randomize_max_comments',
-                dest='randomized_max_number',
-                action='store_true')
+@click.option('-r', '--randomized_max_number',
+              is_flag=True)
+@click.confirmation_option(
+    help='If the iteration number is great it may take a while.')
 def create_fixtures(iteration_number,
                     users_number,
                     max_comments_per_entity,
@@ -83,9 +85,10 @@ def create_fixtures(iteration_number,
        users_number,
        max_comments_per_entity,
        randomized_max_number)
-
-
-manager.add_command('runserver', Server())
-
-if __name__ == '__main__':
-    manager.run()
+    click.echo(('Fixtures created with {iter_n} iterations, '
+                '{u} users, {m} maximum comments per entity; '
+                'max comments randomizer was set to {r}.')
+               .format(iter_n=iteration_number,
+                       u=users_number,
+                       m=max_comments_per_entity,
+                       r=randomized_max_number))
