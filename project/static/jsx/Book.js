@@ -1,6 +1,7 @@
 import React from 'react';
 import {
-    Link
+    Link,
+    Redirect
 } from 'react-router-dom';
 import {
     Panel,
@@ -52,8 +53,11 @@ class Book extends React.Component {
         this.state = {
             book: [],
             isLoaded: false,
-            errorCode404: false
-        }
+            errorCode404: false,
+            deletionSuccess: false,
+            deletionButtonStyle: null
+        };
+        this.deleteBook = this.deleteBook.bind(this);
     }
 
     componentDidMount() {
@@ -67,19 +71,46 @@ class Book extends React.Component {
         });
     }
 
+    deleteBook() {
+        if (this.state.deletionButtonStyle === null) {
+            this.setState({deletionButtonStyle: 'danger'});
+            return;
+        }
+
+        fetch(`/api/delete-entity?id=${this.state.book.id}&entity=book`, {credentials: 'same-origin'}).then(resp => {
+            if (resp.ok) {
+                this.setState({deletionSuccess: true});
+            } else {
+                this.setState({deletionButtonStyle: null});
+                throw resp.status;
+            }
+        }).catch(err => {console.log(`Failed with an error code ${err}`);});
+    }
+
     render() {
-        let {isLoaded, book, errorCode404} = this.state;
+        let {isLoaded,
+             book,
+             errorCode404,
+             deletionSuccess,
+             deletionButtonStyle} = this.state;
+
         if (errorCode404) {
             return (<Code404Error location={location}/>);
+        } else if (deletionSuccess) {
+            return (<Redirect to={'/books'}/>);
         }
+
         if (isLoaded) {
-            var title = book.title;
-            var authors = book.authors.map(
+            const title = book.title;
+            const authors = book.authors.map(
                 (obj) => {
                     const fullName = obj.surname? obj.surname + ' ' + obj.name: obj.name;
                     return <Link to={`/authors/${obj.id}`} key={obj.id.toString()}>{fullName}; </Link>
                 }
             );
+
+            const deletionWarning = deletionButtonStyle ? 'This action is irreversible!' : null;
+
 
         return (
                 <div>
@@ -87,6 +118,15 @@ class Book extends React.Component {
                 <h4 className="text-center">A book by {authors}</h4>
                 <div>
                 Spotted an error? Want to add smth? <Link to={`/books/${this.props.match.params.bookId}/edit`}> Please push here!</Link>
+                </div>
+                <div>
+                    Have an issue with this entity? Be sure to excercise your deletion powers!
+                    <Button className='pull-right'
+                bsStyle={deletionButtonStyle}
+                onClick={this.deleteBook}>Delete book</Button>
+                    <h3>
+                    {deletionWarning}
+                    </h3>
                 </div>
                 <Panel header="Book info">
                 {book.description}

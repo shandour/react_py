@@ -1,7 +1,7 @@
 import React from 'react';
 import {
-    Route,
-    Link
+    Link,
+    Redirect
 } from 'react-router-dom';
 import {
     Panel,
@@ -61,8 +61,11 @@ class Author extends React.Component {
         this.state = {
             author: [],
             isLoaded: false,
-            errorCode404: false
+            errorCode404: false,
+            deletionSuccess: false,
+            deletionButtonStyle: null
         };
+        this.deleteAuthor = this.deleteAuthor.bind(this);
     }
 
     componentDidMount() {
@@ -80,15 +83,39 @@ class Author extends React.Component {
                 });
     }
 
+    deleteAuthor() {
+        if (this.state.deletionButtonStyle === null) {
+            this.setState({deletionButtonStyle: 'danger'});
+            return;
+        }
+
+        fetch(`/api/delete-entity?id=${this.state.author.id}&entity=author`, {credentials: 'same-origin'}).then(resp => {
+            if (resp.ok) {
+                this.setState({deletionSuccess: true});
+            } else {
+                this.setState({deletionButtonStyle: null});
+                throw resp.status;
+            }
+        }).catch(err => {console.log(`Failed with an error code ${err}`);});
+    }
+
     render() {
-        let {isLoaded, author, errorCode404} = this.state;
+        let {isLoaded,
+             author,
+             errorCode404,
+             deletionSuccess,
+             deletionButtonStyle} = this.state;
+
         if (errorCode404) {
             return (<Code404Error location={location}/>);
+        } else if (deletionSuccess) {
+            return (<Redirect to={'/authors'}/>);
         }
 
         if (isLoaded) {
-            let fullName = author.surname ? author.name + " " + author.surname: author.name;
-            let books = authorBooks(author.books);
+            const fullName = author.surname ? author.name + " " + author.surname: author.name;
+            const books = authorBooks(author.books);
+            const deletionWarning = deletionButtonStyle ? 'This action is irreversible!' : null;
 
             return (
                     <div>
@@ -96,6 +123,15 @@ class Author extends React.Component {
                     <div>
                    Spotted an error? Want to add smth? <Link to={`/authors/${this.props.match.params.authorId}/edit`}> Please push here!</Link>
                     </div>
+                    <div>
+                    Have an issue with this entity? Be sure to excercise your deletion powers!
+                    <Button className='pull-right'
+                bsStyle={deletionButtonStyle}
+                onClick={this.deleteAuthor}>Delete author</Button>
+                    <h3>
+                    {deletionWarning}
+                    </h3>
+                </div>
                     <Panel header="Author info">
                     {author.description}
                 </Panel>

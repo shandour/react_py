@@ -753,6 +753,18 @@ def delete_comment(comment_type, comment_id):
         return False
 
 
+def delete_book_or_author(entity_type, entity_id):
+    if entity_type == 'author':
+        entity = Author
+    elif entity_type == 'book':
+        entity = Book
+    else:
+        return
+    entity_to_delete = entity.query.get(entity_id)
+    db.session.delete(entity_to_delete)
+    db.session.commit()
+
+
 def check_if_user_wrote_comment(user_id, comment_id, comment_type):
     if comment_type.lower() not in ['author', 'book']:
         return False

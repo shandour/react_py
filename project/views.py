@@ -48,7 +48,8 @@ from project.db_operations import (
     react_to_comment,
     delete_comment as delete_one_comment,
     sort_user_comments,
-    check_if_user_can_edit_entity
+    check_if_user_can_edit_entity,
+    delete_book_or_author
 )
 
 
@@ -144,13 +145,15 @@ def edit_book(book_id):
 def can_user_edit_entity():
     if not current_user.is_authenticated:
         return Response(status='403')
-    if not (current_user.has_role(ADMIN_ROLE) or current_user.has_role(EDITOR_ROLE)):
+    roles = [r.name.lower() for r in current_user.roles]
+    if not (ADMIN_ROLE in roles or EDITOR_ROLE in roles):
         if check_if_user_can_edit_entity(
                 request.args['entity'],
                 request.args['id'],
                 current_user.id):
             return Response(status='200')
         return Response(status='403')
+    return Response(status='200')
 
 
 # * retreive suggestions: if entries more than NUMBER? for each letter 2 most prolific authors
@@ -184,6 +187,26 @@ def books_get_suggestions():
         query = request.args['q']
         new_info = get_suggestions(query, 'books', current_amount)
         return jsonify(new_info)
+
+
+@app.route('/api/delete-entity')
+def delete_book_or_author_from_db():
+    entity_id = request.args.get('id')
+    entity_type = request.args.get('entity')
+    if not entity_id:
+        return Response(status='404')
+    if not current_user.is_authenticated:
+        return Response(status='403')
+    roles = [r.name.lower() for r in current_user.roles]
+    if ((ADMIN_ROLE in roles or EDITOR_ROLE in roles)
+        or check_if_user_can_edit_entity(
+            entity_type,
+            entity_id,
+            current_user.id)
+    ):
+        delete_book_or_author(entity_type, entity_id)
+        return Response(status='200')
+    return Response(status='403')
 
 
 #LOGIN LOGIC
@@ -318,8 +341,9 @@ def can_user_edit():
 
 #check user identity: returns True if user is logged-in, wrote the comment or is admin
 def check_user_identity(comment_id, comment_type):
+    roles = [r.name.lower() for r in current_user.roles]
     return (current_user.is_authenticated
-            and (current_user.has_role(ADMIN_ROLE)
+            and (ADMIN_ROLE in roles
                  or check_if_user_wrote_comment(
                      current_user.id,
                      comment_id,
