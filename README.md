@@ -6,4 +6,3 @@ This is a demonstrational library site, featuring th following models and ways t
 * Author, Book, AuthorComment, BookComment for the main interactable entities, which the users (dependong on their roles can add, delete and/or edit).
 * User, Role used for authentication and authorization
 * A user can access his/her own personal cabinet (the profile page), where he/she can view his/her personal information and change password; also the comments written by the user can be sorted according to different sorting criteria.
-
