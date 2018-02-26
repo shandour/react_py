@@ -76,7 +76,9 @@ class UserCabinet extends React.Component {
             }
         }).then(data => {
             this.setState({user: data, loaded: true});
-        }).catch(err => {console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);});
+        }).catch(err => {
+            console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);
+        });
     }
 
     handlePasswordChange(e) {
@@ -99,7 +101,7 @@ class UserCabinet extends React.Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         const req = new Request('/api/change-password',
-                                {method: 'POST',
+                                {method: 'PUT',
                                  credentials: 'same-origin',
                                  headers: myHeaders,
                                  body: new URLSearchParams(bodyObj)}
@@ -153,7 +155,9 @@ class UserCabinet extends React.Component {
             let user = this.state.user;
             user.activity = data;
             this.setState({user: user, commentsDisplay: commentsDisplay});
-        }).catch(err => {console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);});
+        }).catch(err => {
+            console.log(`Responded with the error code ${err}. You either have no permission to view this or the server has experienced an error. The first is way more likely, pal.`);
+        });
     }
 
     expandCommentInfo(e) {

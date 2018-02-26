@@ -74,13 +74,19 @@ def get_book_by_id(id=None):
 def get_user_by_id(sort_dict, user_id=None):
     user = User.query.get_or_404(user_id)
     comments_dict = sort_user_comments(sort_dict, user_id)
+    if not user.roles:
+        roles = 'user'
+    else:
+        roles = [r.name for r in user.roles]
+        if len(roles) > 1:
+            roles = '; '.join(roles)[:-2]
 
     return {
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'confirmed_at': user.confirmed_at,
-        'role': user.roles if user.roles else 'user',
+        'role': roles,
         'activity': {
             'comments': comments_dict['comments'],
             'pages': comments_dict['pages']

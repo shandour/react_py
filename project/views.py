@@ -86,7 +86,7 @@ def add_author():
         return jsonify(errors)
 
 
-@app.route('/api/edit-author/<int:author_id>', methods=['GET', 'POST'])
+@app.route('/api/edit-author/<int:author_id>', methods=['GET', 'PUT'])
 def edit_author(author_id):
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -127,7 +127,7 @@ def add_book():
         return jsonify(errors)
 
 
-@app.route('/api/edit-book/<int:book_id>', methods=['GET', 'POST'])
+@app.route('/api/edit-book/<int:book_id>', methods=['GET', 'PUT'])
 def edit_book(book_id):
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -156,10 +156,7 @@ def can_user_edit_entity():
     return Response(status='200')
 
 
-# * retreive suggestions: if entries more than NUMBER? for each letter 2 most prolific authors
-#     else ALL of them 
-# *if asked the second time retrieve all suggestions for letter
-# return suggestions as 'SUGGESTION; ID'
+# suggestions for author and book tags: initial called when during React's componentDidMount
 
 @app.route('/api/authors-initial-suggestions')
 def authors_initial_suggestions():
@@ -189,8 +186,11 @@ def books_get_suggestions():
         return jsonify(new_info)
 
 
-@app.route('/api/delete-entity')
+@app.route('/api/delete-entity', methods=['GET', 'DELETE'])
 def delete_book_or_author_from_db():
+    if not request.method == 'DELETE':
+        return Response(status='405')
+
     entity_id = request.args.get('id')
     entity_type = request.args.get('entity')
     if not entity_id:
@@ -266,8 +266,10 @@ def comments(comment_type, entity_id):
 
 
 #like, dislike or revert to neutral
-@app.route('/api/comments/attitude')
+@app.route('/api/comments/attitude', methods=['GET', 'POST'])
 def attitude_on_comment():
+    if not request.method == 'POST':
+        return Response(status='405')
     if not current_user.is_authenticated:
         return Response(status='403')
     attitude = request.args.get('attitude')
@@ -281,8 +283,10 @@ def attitude_on_comment():
 
 
 #invoke check_user_identity or see if user is admin
-@app.route('/api/delete-comment')
+@app.route('/api/delete-comment', methods=['GET', 'DELETE'])
 def delete_comment():
+    if not request.method == 'DELETE':
+        return Response(status='405')
     comment_type = request.args.get('comment_type')
     comment_id = request.args.get('comment_id')
     if not check_user_identity(comment_id, comment_type):
@@ -308,7 +312,7 @@ def add_comment(comment_type, entity_id):
         return jsonify({'errors': form.errors})
 
 
-@app.route('/api/edit-comment', methods=['GET', 'POST'])
+@app.route('/api/edit-comment', methods=['GET', 'PUT'])
 def edit_comment():
     comment_type = request.args.get('comment_type')
     comment_id = request.args.get('comment_id')
@@ -384,7 +388,7 @@ def register():
 
 
 #custom change password mechanism
-@app.route('/api/change-password', methods=['GET', 'POST'])
+@app.route('/api/change-password', methods=['GET', 'PUT'])
 def change_password():
     if not current_user.is_authenticated:
         return Response(status='403')

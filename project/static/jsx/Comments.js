@@ -55,8 +55,8 @@ class Comment extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
-        let req = new Request(`/api/edit-comment?comment_type=${this.props.entityType}&comment_id=${this.state.commentInfo.id}`, options);
+        const options = {method: 'PUT', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
+        const req = new Request(`/api/edit-comment?comment_type=${this.props.entityType}&comment_id=${this.state.commentInfo.id}`, options);
         fetch(req).then(resp => resp.json()).then(data => {
             if (data['success']) {
                 let commentInfo = Object.assign({}, this.state.commentInfo);
@@ -77,7 +77,8 @@ class Comment extends React.Component {
             return;
         }
         if (!this.state.beingEdited) {
-            let req = new Request(`/api/can-user-edit?comment_type=${this.props.entityType}&comment_id=${this.props.commentInfo.id}`, {credentials: "same-origin"});
+            const req = new Request(`/api/can-user-edit?comment_type=${this.props.entityType}&comment_id=${this.props.commentInfo.id}`,
+                                  {credentials: "same-origin"});
             fetch(req).then(resp => {
                 if (resp.status == 200) {
                     this.setState({beingEdited: true, preEditSnapShot: this.state.commentInfo});
@@ -105,7 +106,10 @@ class Comment extends React.Component {
             return;
         } else {
             const reaction = e.target.name;
-            let req = new Request(`/api/comments/attitude?attitude=${reaction}&comment_type=${this.props.entityType}&comment_id=${this.props.commentInfo.id}`, {credentials: 'same-origin'});
+            const req = new Request(`/api/comments/attitude?attitude=${reaction}&comment_type=${this.props.entityType}&comment_id=${this.props.commentInfo.id}`,
+                                  {credentials: 'same-origin',
+                                   method: 'POST',
+                                   body: new URLSearchParams({'csrf_token': window.csrf_token})});
             fetch(req).then(resp => {
                 if (resp.ok) {
                     return resp.json()
@@ -307,10 +311,14 @@ class Comments extends React.Component{
 
 
     handleDeleteComment(commentId, commentCount) {
-        let req = new Request(`/api/can-user-edit?comment_type=${this.props.entityType}&comment_id=${commentId}`, {credentials: "same-origin"});
+        const req = new Request(`/api/can-user-edit?comment_type=${this.props.entityType}&comment_id=${commentId}`,
+                                {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (resp.ok) {
-                let req = new Request(`/api/delete-comment?comment_type=${this.props.entityType}&comment_id=${commentId}`, {credentials: "same-origin"});
+                const req = new Request(`/api/delete-comment?comment_type=${this.props.entityType}&comment_id=${commentId}`,
+                                        {credentials: "same-origin",
+                                         method: 'DELETE',
+                                         body: new URLSearchParams({'csrf_token': window.csrf_token})});
                 return fetch(req);
             } else {
                 throw `Action denied wiith error code ${resp.status}`;

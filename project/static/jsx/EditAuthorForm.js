@@ -8,10 +8,10 @@ import {
     ControlLabel,
     HelpBlock,
     Button
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 
-import {Code404Error} from './Code404Error.js'
-import {CustomField} from './CustomInputField.js'
+import {Code404Error} from './Code404Error.js';
+import {CustomField} from './CustomInputField.js';
 
 
 class EditAuthorForm extends React.Component {
@@ -193,14 +193,24 @@ class EditAuthorForm extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
+        let options = {method: 'PUT',
+                       body: new URLSearchParams(bodyObj),
+                       headers: myHeaders,
+                       credentials: "same-origin"};
         let req = new Request(`/api/edit-author/${this.props.match.params.authorId}`, options);
-        fetch(req).then(resp => resp.json()).then(data => {
+        fetch(req).then(resp => {
+            if (!resp.ok) {
+                throw resp.status;
+            }
+            return resp.json();
+        }).then(data => {
             if (data == 'success') {
                 this.setState({successStatus: true});
-                return;
+            } else {
+                this.setState({errors: data});
             }
-            this.setState({errors: data});
+        }).catch(errCode => {
+            console.log(`Aborted with the error code ${errCode}`);
         });
     }
 

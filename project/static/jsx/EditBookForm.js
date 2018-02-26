@@ -44,7 +44,8 @@ class EditBookForm extends React.Component {
     }
 
     componentDidMount () {
-        const req = new Request(`/api/can-user-edit-entity?entity=book&id=${this.props.match.params.bookId}`, {credentials: 'same-origin'});
+        const req = new Request(`/api/can-user-edit-entity?entity=book&id=${this.props.match.params.bookId}`,
+                                {credentials: 'same-origin'});
         fetch(req).then(resp => {
             if (resp.status == '403') {
                 this.setState({unauthorizedWarning: true});
@@ -193,7 +194,10 @@ class EditBookForm extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
+        let options = {method: 'PUT',
+                       body: new URLSearchParams(bodyObj),
+                       headers: myHeaders,
+                       credentials: "same-origin"};
         let req = new Request(`/api/edit-book/${this.props.match.params.bookId}`, options);
         fetch(req).then(resp => resp.json()).then(data => {
             if (data == 'success') {

@@ -77,7 +77,10 @@ class Book extends React.Component {
             return;
         }
 
-        fetch(`/api/delete-entity?id=${this.state.book.id}&entity=book`, {credentials: 'same-origin'}).then(resp => {
+        fetch(`/api/delete-entity?id=${this.state.book.id}&entity=book`,
+              {credentials: 'same-origin',
+               method: 'DELETE',
+               body: new URLSearchParams({'csrf_token': window.csrf_token})}).then(resp => {
             if (resp.ok) {
                 this.setState({deletionSuccess: true});
             } else {
