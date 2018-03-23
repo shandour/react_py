@@ -71,7 +71,7 @@ class EditBookForm extends React.Component {
                         });
                     }
                     this.setState({book:book, author_tags:author_tags});
-                    fetch("/api/authors-initial-suggestions").then(results => results.json()).then(data => {
+                    fetch("/api/authors/suggestions?initial=True").then(results => results.json()).then(data => {
                         this.setState({
                             suggestions: data.suggestions,
                             initialFinished: data.finished,
@@ -98,7 +98,7 @@ class EditBookForm extends React.Component {
             amount = this.state.amount;
         }
 
-        fetch(`/api/authors-get-suggestions?q=${query}&amount=${amount}`,
+        fetch(`/api/authors/suggestions?q=${query}&amount=${amount}`,
               {credentials: "same-origin"}).then(resp => resp.json()).then(data => {
                   const suggestions = amount == 0 ? data.suggestions : [...this.state.suggestions, ...data.suggestions];
                   if (query.length > 0) {
@@ -154,7 +154,7 @@ class EditBookForm extends React.Component {
         if (!this.state.initialFinished) {
             if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1)
             {
-                fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                fetch(`/api/authors/suggestions?q=${query}`, {credentials: "same-origin"}).then(
                     results => results.json()
                 ).then(data => {
                     this.setState({
@@ -165,7 +165,7 @@ class EditBookForm extends React.Component {
                 }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
             } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
-                fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                fetch(`/api/authors/suggestions?q=${query}`, {credentials: "same-origin"}).then(
                     results => results.json()
                 ).then(data => {
                     this.setState({
@@ -198,7 +198,7 @@ class EditBookForm extends React.Component {
                        body: new URLSearchParams(bodyObj),
                        headers: myHeaders,
                        credentials: "same-origin"};
-        let req = new Request(`/api/edit-book/${this.props.match.params.bookId}`, options);
+        let req = new Request(`/api/books/${this.props.match.params.bookId}`, options);
         fetch(req).then(resp => resp.json()).then(data => {
             if (data == 'success') {
                 this.setState({successStatus: true});

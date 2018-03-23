@@ -56,7 +56,7 @@ class Comment extends React.Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         const options = {method: 'PUT', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
-        const req = new Request(`/api/edit-comment?comment_type=${this.props.entityType}&comment_id=${this.state.commentInfo.id}`, options);
+        const req = new Request(`/api/${this.props.entityType}s/comments/${this.state.commentInfo.id}`, options);
         fetch(req).then(resp => resp.json()).then(data => {
             if (data['success']) {
                 let commentInfo = Object.assign({}, this.state.commentInfo);
@@ -282,7 +282,7 @@ class Comments extends React.Component{
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
-        let req = new Request(`/api/${this.props.entityType}s/${this.props.entityId}/add-comment`, options);
+        let req = new Request(`/api/${this.props.entityType}s/${this.props.entityId}/comments/add`, options);
         fetch(req).then(resp => {
             if (resp.ok) {
                 return resp.json();
@@ -315,7 +315,7 @@ class Comments extends React.Component{
                                 {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (resp.ok) {
-                const req = new Request(`/api/delete-comment?comment_type=${this.props.entityType}&comment_id=${commentId}`,
+                const req = new Request(`/api/${this.props.entityType}s/comments/${commentId}`,
                                         {credentials: "same-origin",
                                          method: 'DELETE',
                                          body: new URLSearchParams({'csrf_token': window.csrf_token})});

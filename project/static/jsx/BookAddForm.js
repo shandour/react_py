@@ -40,7 +40,7 @@ class BookAddForm extends React.Component {
     }
 
     componentDidMount() {
-        fetch("/api/authors-initial-suggestions").then(results=> results.json()).then(data => {
+        fetch("/api/authors/suggestions?initial=True").then(results=> results.json()).then(data => {
             this.setState({
                 suggestions: data.suggestions,
                 initialFinished: data.finished,
@@ -63,7 +63,7 @@ class BookAddForm extends React.Component {
             amount = this.state.amount;
         }
 
-        fetch(`/api/authors-get-suggestions?q=${query}&amount=${amount}`,
+        fetch(`/api/authors/suggestions?q=${query}&amount=${amount}`,
               {credentials: "same-origin"}).then(resp => resp.json()).then(data => {
                   const suggestions = amount == 0 ? data.suggestions : [...this.state.suggestions, ...data.suggestions];
                   console.log(typeof suggestions)
@@ -120,7 +120,7 @@ class BookAddForm extends React.Component {
         if (!this.state.initialFinished) {
             if (filteredSuggestions.length == 0 && !this.state.intermediateFinished && inputValue.length > 1)
             {
-                fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                fetch(`/api/authors/suggestions?q=${query}`, {credentials: "same-origin"}).then(
                     results => results.json()
                 ).then(data => {
                     this.setState({
@@ -131,7 +131,7 @@ class BookAddForm extends React.Component {
                 }).catch(err => {console.log('Something went wrong processing your query')});
                 return this.state.suggestions;
             } else if (this.state.intermediateFinished && !query.startsWith(this.state.lastQuery)) {
-                fetch(`/api/authors-get-suggestions?q=${query}`, {credentials: "same-origin"}).then(
+                fetch(`/api/authors/suggestions?q=${query}`, {credentials: "same-origin"}).then(
                     results => results.json()
                 ).then(data => {
                     this.setState({

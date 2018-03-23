@@ -77,7 +77,7 @@ class Book extends React.Component {
             return;
         }
 
-        fetch(`/api/delete-entity?id=${this.state.book.id}&entity=book`,
+        fetch(`/api/books/${this.state.book.id}`,
               {credentials: 'same-origin',
                method: 'DELETE',
                body: new URLSearchParams({'csrf_token': window.csrf_token})}).then(resp => {
@@ -171,8 +171,8 @@ class Books extends React.Component{
     render() {
         let {isLoaded, books} = this.state;
         if (isLoaded) {
-            var boundBookLinks = bookLinks.bind(this);
-            var sortedBooks = boundBookLinks(books);
+            let boundBookLinks = bookLinks.bind(this);
+            let sortedBooks = boundBookLinks(books);
 
             return (
                     <div>

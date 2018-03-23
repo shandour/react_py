@@ -21,7 +21,9 @@ def create_app(settings_module='project.settings'):
     from project.forms import csrf
     csrf.init_app(app)
 
-    with app.app_context():
-        import project.views
+    import project.views
+    from project.blueprints import index_bp, api_bp
+    app.register_blueprint(index_bp)
+    app.register_blueprint(api_bp)
 
     return app

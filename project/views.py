@@ -51,28 +51,29 @@ from project.db_operations import (
     check_if_user_can_edit_entity,
     delete_book_or_author
 )
+from project.blueprints import index_bp, api_bp
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@index_bp.route('/', defaults={'path': ''})
+@index_bp.route('/<path:path>')
 def index_page(path):
     return render_template('index.html')
 
 
-@app.route('/api/authors')
+@api_bp.route('/authors')
 def authors():
     authors = get_all_authors_with_sections()
     resp = jsonify(authors)
     return resp
 
 
-@app.route('/api/authors/<int:author_id>')
+@api_bp.route('/authors/<int:author_id>')
 def show_author(author_id):
     author = jsonify(get_author_by_id(author_id))
     return author
 
 
-@app.route('/api/authors/add', methods=['GET', 'POST'])
+@api_bp.route('/authors/add', methods=['POST'])
 def add_author():
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -86,7 +87,7 @@ def add_author():
         return jsonify(errors)
 
 
-@app.route('/api/edit-author/<int:author_id>', methods=['GET', 'PUT'])
+@api_bp.route('/authors/<int:author_id>', methods=['PUT'])
 def edit_author(author_id):
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -100,20 +101,20 @@ def edit_author(author_id):
         return jsonify(errors)
 
 
-@app.route('/api/books')
+@api_bp.route('/books')
 def books():
     books = get_all_books_with_sections()
     resp = jsonify(books)
     return resp
 
 
-@app.route('/api/books/<int:book_id>')
+@api_bp.route('/books/<int:book_id>')
 def show_book(book_id):
     book = jsonify(get_book_by_id(book_id))
     return book
 
 
-@app.route('/api/books/add', methods=['GET', 'POST'])
+@api_bp.route('/books/add', methods=['POST'])
 def add_book():
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -127,7 +128,7 @@ def add_book():
         return jsonify(errors)
 
 
-@app.route('/api/edit-book/<int:book_id>', methods=['GET', 'PUT'])
+@api_bp.route('/books/<int:book_id>', methods=['PUT'])
 def edit_book(book_id):
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -141,7 +142,7 @@ def edit_book(book_id):
         return jsonify(errors)
 
 
-@app.route('/api/can-user-edit-entity')
+@api_bp.route('/can-user-edit-entity')
 def can_user_edit_entity():
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -157,42 +158,50 @@ def can_user_edit_entity():
 
 
 # suggestions for author and book tags: initial called when during React's componentDidMount
-
-@app.route('/api/authors-initial-suggestions')
+@api_bp.route('/authors/suggestions')
 def authors_initial_suggestions():
-        initial = suggestions_initial('authors')
+    initial = request.args.get('initial')
+    if initial:
+        initial_suggestions_number = app.config['INITIAL_SUGGESTIONS_NUMBER']
+        initial = suggestions_initial('authors', initial_suggestions_number)
+
         return jsonify(initial)
 
+    current_amount = request.args.get('amount')
+    query = request.args['q']
+    limited_number = app.config['SUGGESTIONS_PER_QUERY']
+    new_info = get_suggestions(
+        query,
+        'authors',
+        limited_number,
+        current_amount)
 
-@app.route('/api/authors-get-suggestions')
-def authors_get_suggestions():
-        current_amount = request.args.get('amount')
-        query = request.args['q']
-        new_info = get_suggestions(query, 'authors', current_amount)
-        return jsonify(new_info)
+    return jsonify(new_info)
 
 
-@app.route('/api/books-initial-suggestions')
+@api_bp.route('/books/suggestions')
 def books_initial_suggestions():
-        initial = suggestions_initial('books')
+    initial = request.args.get('initial')
+    if initial:
+        initial_suggestions_number = app.config['INITIAL_SUGGESTIONS_NUMBER']
+        initial = suggestions_initial('books', initial_suggestions_number)
+
         return jsonify(initial)
 
+    current_amount = request.args.get('amount')
+    query = request.args['q']
+    limited_number = app.config['SUGGESTIONS_PER_QUERY']
+    new_info = get_suggestions(
+        query,
+        'books',
+        limited_number,
+        current_amount)
 
-@app.route('/api/books-get-suggestions')
-def books_get_suggestions():
-        current_amount = request.args.get('amount')
-        query = request.args['q']
-        new_info = get_suggestions(query, 'books', current_amount)
-        return jsonify(new_info)
+    return jsonify(new_info)
 
 
-@app.route('/api/delete-entity', methods=['GET', 'DELETE'])
-def delete_book_or_author_from_db():
-    if not request.method == 'DELETE':
-        return Response(status='405')
-
-    entity_id = request.args.get('id')
-    entity_type = request.args.get('entity')
+@api_bp.route('/<string:entity_type>/<int:entity_id>', methods=['DELETE'])
+def delete_book_or_author_from_db(entity_type, entity_id):
     if not entity_id:
         return Response(status='404')
     if not current_user.is_authenticated:
@@ -200,7 +209,7 @@ def delete_book_or_author_from_db():
     roles = [r.name.lower() for r in current_user.roles]
     if ((ADMIN_ROLE in roles or EDITOR_ROLE in roles)
         or check_if_user_can_edit_entity(
-            entity_type,
+            entity_type[:-1],
             entity_id,
             current_user.id)
     ):
@@ -210,8 +219,8 @@ def delete_book_or_author_from_db():
 
 
 #LOGIN LOGIC
-@app.route('/api/is-logged-in')
-@app.route('/api/is-logged-in/<string:info>')
+@api_bp.route('/is-logged-in')
+@api_bp.route('/is-logged-in/<string:info>')
 def is_user_logged_in(info=None):
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -226,7 +235,7 @@ def is_user_logged_in(info=None):
 
 
 #LOGOUT ASSISTANT
-@app.route('/api/logout')
+@api_bp.route('/logout')
 def logout_current_user():
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -236,15 +245,14 @@ def logout_current_user():
 
 
 #return random entity
-@app.route('/api/random')
+@api_bp.route('/random')
 def random():
     entity_dict = get_random_entity()
     return jsonify(entity_dict)
 
 
 #COMMENTS functionality
-
-@app.route('/api/<string:comment_type>/<int:entity_id>/comments')
+@api_bp.route('/<string:comment_type>/<int:entity_id>/comments')
 def comments(comment_type, entity_id):
     if comment_type not in ['authors', 'books']:
         return
@@ -266,7 +274,7 @@ def comments(comment_type, entity_id):
 
 
 #like, dislike or revert to neutral
-@app.route('/api/comments/attitude', methods=['GET', 'POST'])
+@api_bp.route('/comments/attitude', methods=['GET', 'POST'])
 def attitude_on_comment():
     if not request.method == 'POST':
         return Response(status='405')
@@ -283,20 +291,17 @@ def attitude_on_comment():
 
 
 #invoke check_user_identity or see if user is admin
-@app.route('/api/delete-comment', methods=['GET', 'DELETE'])
-def delete_comment():
-    if not request.method == 'DELETE':
-        return Response(status='405')
-    comment_type = request.args.get('comment_type')
-    comment_id = request.args.get('comment_id')
-    if not check_user_identity(comment_id, comment_type):
+@api_bp.route('/<string:comment_type>/comments/<int:comment_id>',
+              methods=['DELETE'])
+def delete_comment(comment_type, comment_id):
+    if not check_user_identity(comment_id, comment_type[:-1]):
         return Response(status='403')
     delete_one_comment(comment_type, comment_id)
     return Response(status='200')
 
 
-@app.route('/api/<string:comment_type>/<int:entity_id>/add-comment',
-           methods=['GET', 'POST'])
+@api_bp.route('/<string:comment_type>/<int:entity_id>/comments/add',
+           methods=['POST'])
 def add_comment(comment_type, entity_id):
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -312,25 +317,25 @@ def add_comment(comment_type, entity_id):
         return jsonify({'errors': form.errors})
 
 
-@app.route('/api/edit-comment', methods=['GET', 'PUT'])
-def edit_comment():
-    comment_type = request.args.get('comment_type')
-    comment_id = request.args.get('comment_id')
-    if not check_user_identity(comment_id, comment_type):
+@api_bp.route('/<string:comment_type>/comments/<int:comment_id>',
+              methods=['PUT'])
+def edit_comment(comment_type, comment_id):
+    if not check_user_identity(comment_id, comment_type[:-1]):
         errors = {'topic': 'you don\'t have the permission to edit',
                   'text': 'you don\'t have the permission to edit'}
         return jsonify({'errors': errors, 'success': False})
 
     form = CommentForm(request.form)
     if form.validate_on_submit():
-        comment = update_comment(comment_id, comment_type, form)
+        comment = update_comment(comment_id, comment_type[:-1], form)
         payload = jsonify({'edited_comment': comment, 'success': True})
         return payload
     else:
         return jsonify({'errors': form.errors, 'success': False})
 
+
 #check if user can edit and tell client
-@app.route('/api/can-user-edit')
+@api_bp.route('/can-user-edit')
 def can_user_edit():
     comment_type = request.args.get('comment_type')
     comment_id = request.args.get('comment_id')
@@ -358,7 +363,7 @@ def check_user_identity(comment_id, comment_type):
 
 
 #custom login mechanism
-@app.route('/api/login', methods=['GET', 'POST'])
+@api_bp.route('/login', methods=['POST'])
 @anonymous_user_required
 def login():
     form = LoginForm(request.form)
@@ -373,7 +378,7 @@ def login():
 
 
 #custom register mechanism
-@app.route('/api/register', methods=['GET', 'POST'])
+@api_bp.route('/register', methods=['POST'])
 @anonymous_user_required
 def register():
     form = UpgradedRegisterForm(request.form)
@@ -388,7 +393,7 @@ def register():
 
 
 #custom change password mechanism
-@app.route('/api/change-password', methods=['GET', 'PUT'])
+@api_bp.route('/change-password', methods=['PUT'])
 def change_password():
     if not current_user.is_authenticated:
         return Response(status='403')
@@ -404,7 +409,7 @@ def change_password():
         return resp
 
 
-@app.route('/api/get-user-comments')
+@api_bp.route('/get-user-comments')
 def get_user_comments_sorted():
     if not current_user.is_authenticated:
             return Response(status='403')
@@ -415,7 +420,15 @@ def get_user_comments_sorted():
         'page': request.args.get('page')
     }
 
-    comments = (sort_user_comments(sort_dict, current_user.id)
+    max_comments_per_page = app.config['USER_CABINET_PAGINATION_PER_PAGE']
+
+    comments = (sort_user_comments(
+                    sort_dict,
+                    max_comments_per_page,
+                    current_user.id)
                 if not request.args.get('initial')
-                else get_user_by_id(sort_dict, current_user.id))
+                else get_user_by_id(
+                    sort_dict,
+                    max_comments_per_page,
+                    current_user.id))
     return jsonify(comments)

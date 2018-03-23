@@ -3,7 +3,6 @@ import datetime
 
 from sortedcontainers import SortedDict, SortedListWithKey
 from flask import current_app as app
-from sqlalchemy.orm import joinedload
 
 from project.models import Author, Book, AuthorComment, BookComment, User, db
 
@@ -71,9 +70,14 @@ def get_book_by_id(id=None):
 
 
 #for comments invoke the get by sort option function
-def get_user_by_id(sort_dict, user_id=None):
+def get_user_by_id(sort_dict, max_comments_per_page, user_id=None):
     user = User.query.get_or_404(user_id)
-    comments_dict = sort_user_comments(sort_dict, user_id)
+    max_comments_per_page = max_comments_per_page
+    comments_dict = sort_user_comments(
+        sort_dict,
+        max_comments_per_page,
+        user_id)
+
     if not user.roles:
         roles = 'user'
     else:
@@ -94,8 +98,8 @@ def get_user_by_id(sort_dict, user_id=None):
     }
 
 
-def sort_user_comments(sort_dict, user_id=None):
-    comments_per_page = app.config['USER_CABINET_PAGINATION_PER_PAGE']
+def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
+    comments_per_page = max_comments_per_page
     comments_type = (AuthorComment if sort_dict['comments_type'] == 'authors'
                      else BookComment)
     comments_query = (comments_type.query
@@ -155,23 +159,18 @@ def sort_user_comments(sort_dict, user_id=None):
 
 def get_all_books_with_sections():
     """Returns an OrderedDict of first name letters of corresponding books"""
-    books = Book.query.options(joinedload(Book.authors)).order_by(Book.title.asc()).all()
+    books = Book.query.order_by(Book.title.asc()).all()
     d = SortedDict()
     for b in books:
         first_letter = b.title[0].upper()
         if first_letter not in d:
             d[first_letter] = SortedListWithKey(key=lambda b: b['title'])
-            d[first_letter].add(
-                {
-                    'id': b.id,
-                    'title': b.title,
-                    'authors': [
-                        [a.name, a. surname] if a.surname
-                        else [a.name]
-                        for a in b.authors
-                    ]
-                }
-            )
+        d[first_letter].add(
+            {
+                'id': b.id,
+                'title': b.title
+            }
+        )
 
     # required to make SortedListWithKey JSON serializable
     for letter in d:
@@ -217,6 +216,7 @@ def add_book(form, user_id):
 
     db.session.add(new_book)
     db.session.commit()
+
 
 def update_book(book_id, form):
     book = Book.query.get(book_id)
@@ -306,17 +306,20 @@ def update_comment(comment_id, comment_type, form):
 
 
 #FORM VALIDATION HELPERS
-def check_if_author_exists(data):
-    for author in data:
-        if not Author.query.get(author):
-            return False
-    return True
+def check_if_author_exists(author_ids):
+    authors_count = db.session\
+        .query(db.func.count(Author.id))\
+        .filter(Author.id.in_(author_ids))\
+        .scalar()
+    return len(author_ids) == authors_count
 
-def check_if_book_exists(data):
-    for book in data:
-        if not Book.query.get(book):
-            return False
-    return True
+
+def check_if_book_exists(book_ids):
+    books_count = db.session\
+        .query(db.func.count(Book.id))\
+        .filter(Book.id.in_(book_ids))\
+        .scalar()
+    return len(book_ids) == books_count
 
 
 #RETURNS RANDOM BOOK OR AUTHOR ID DEPENDING ON ENTITY_TYPE
@@ -335,8 +338,8 @@ def get_random_entity():
 
 
 #SUGGESTIONS FUNCTIONS
-def suggestions_initial(suggestion_type):
-    initial_suggestions = app.config['INITIAL_SUGGESTIONS_NUMBER']
+def suggestions_initial(suggestion_type, initial_suggestions_number):
+    initial_suggestions = initial_suggestions_number
     if suggestion_type.lower() == 'authors':
         author_number = Author.query.count()
 
@@ -373,8 +376,8 @@ def suggestions_initial(suggestion_type):
             }
 
 
-def get_suggestions(query, suggestion_type, amount=None):
-    limited_number = app.config['SUGGESTIONS_PER_QUERY']
+def get_suggestions(query, suggestion_type, limited_number, amount=None):
+    limited_number = limited_number
     if suggestion_type.lower() == 'authors':
         Entity = Author
         suggestions = db.session.query(Entity.id, Entity.name, Entity.surname)
@@ -747,11 +750,11 @@ def react_to_comment(attitude, comment_type, comment_id, user_id):
 
 
 def delete_comment(comment_type, comment_id):
-    if comment_type.lower() == 'author':
+    if comment_type.lower() == 'authors':
         author_comment_to_delete = AuthorComment.query.get(comment_id)
         db.session.delete(author_comment_to_delete)
         db.session.commit()
-    elif comment_type.lower() == 'book':
+    elif comment_type.lower() == 'books':
         book_comment_to_delete = BookComment.query.get(comment_id)
         db.session.delete(book_comment_to_delete)
         db.session.commit()
@@ -760,9 +763,9 @@ def delete_comment(comment_type, comment_id):
 
 
 def delete_book_or_author(entity_type, entity_id):
-    if entity_type == 'author':
+    if entity_type == 'authors':
         entity = Author
-    elif entity_type == 'book':
+    elif entity_type == 'books':
         entity = Book
     else:
         return

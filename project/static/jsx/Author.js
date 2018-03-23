@@ -89,7 +89,7 @@ class Author extends React.Component {
             return;
         }
 
-        fetch(`/api/delete-entity?id=${this.state.author.id}&entity=author`,
+        fetch(`/api/authors/${this.state.author.id}`,
               {credentials: 'same-origin',
                method: 'DELETE',
                body: new URLSearchParams({'csrf_token': window.csrf_token})}).then(resp => {

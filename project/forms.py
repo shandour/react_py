@@ -9,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 
 csrf = CSRFProtect()
 
+
  # a tweaked StringField that strips values to exclude
  # incorrect addition, editing and sorting behaviour
 class CleanStringField(StringField):
@@ -75,7 +76,8 @@ class EditAuthorForm(FlaskForm):
     book_tags = StringField('Books', [validators.Optional()])
 
     def validate_book_tags(form, field):
-        if not check_if_book_exists(field.data.rstrip().split(' ')):
+        if not check_if_book_exists([
+                int(b_id) for b_id in field.data.rstrip().split(' ')]):
             raise ValidationError('Incorrect book id')
 
 
@@ -90,7 +92,8 @@ class AddBookForm(FlaskForm):
     def validate_author_tags(form, field):
         if field.data.rstrip() == 'a':
             return
-        if not check_if_author_exists(field.data.rstrip().split(' ')):
+        if not check_if_author_exists([
+                int(a_id) for a_id in field.data.rstrip().split(' ')]):
             raise ValidationError('Incorrect author id')
 
 
