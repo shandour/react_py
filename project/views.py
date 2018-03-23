@@ -256,6 +256,7 @@ def random():
 def comments(comment_type, entity_id):
     if comment_type not in ['authors', 'books']:
         return
+    comments_per_chunk = app.config['COMMENTS_PER_CHUNK']
     comments = {}
     chunk = request.args.get('chunk')
     if not chunk:
@@ -265,9 +266,17 @@ def comments(comment_type, entity_id):
         highlight = int(highlight)
     user_id = current_user.id if hasattr(current_user, 'id') else None
     comments = (
-        get_all_author_comments_by_author_id(entity_id, user_id, int(chunk), highlight)
+        get_all_author_comments_by_author_id(entity_id,
+                                             comments_per_chunk,
+                                             user_id,
+                                             int(chunk),
+                                             highlight)
         if comment_type == 'authors'
-        else get_all_book_comments_by_book_id(entity_id, user_id, int(chunk), highlight)
+        else get_all_book_comments_by_book_id(entity_id,
+                                              comments_per_chunk,
+                                              user_id,
+                                              int(chunk),
+                                              highlight)
     )
     comments['authenticated'] = current_user.is_authenticated;
     return jsonify(comments)

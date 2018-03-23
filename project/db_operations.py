@@ -2,7 +2,6 @@
 import datetime
 
 from sortedcontainers import SortedDict, SortedListWithKey
-from flask import current_app as app
 
 from project.models import Author, Book, AuthorComment, BookComment, User, db
 
@@ -436,11 +435,12 @@ def get_suggestions(query, suggestion_type, limited_number, amount=None):
 
 def get_all_author_comments_by_author_id(
         author_id,
+        comments_per_chunk,
         user_id=None,
         chunk=1,
         comment_to_highlight=None):
 
-    comments_per_chunk = app.config['COMMENTS_PER_CHUNK']
+    comments_per_chunk = comments_per_chunk
     comments_query = (AuthorComment.query
         .filter(AuthorComment.author_id==author_id)
         .order_by(AuthorComment.edited
@@ -504,11 +504,12 @@ def get_all_author_comments_by_author_id(
 
 def get_all_book_comments_by_book_id(
         book_id,
+        comments_per_chunk,
         user_id=None,
         chunk=1,
         comment_to_highlight=None):
 
-    comments_per_chunk = app.config['COMMENTS_PER_CHUNK']
+    comments_per_chunk = comments_per_chunk
     comments_query = (BookComment.query
         .filter(BookComment.book_id==book_id)
         .order_by(BookComment.edited
