@@ -342,7 +342,7 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
     if suggestion_type.lower() == 'authors':
         author_number = Author.query.count()
 
-        if author_number < initial_suggestions:
+        if author_number <= initial_suggestions:
             return {
                 'suggestions': [a.surname + ' ' + a.name + ';' + str(a.id)
                                 if a.surname else a.name + ';' + str(a.id)
@@ -355,12 +355,12 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
                                  if a.surname else a.name + ';' + str(a.id)
                                  for a in Author.query.order_by(
                                     Author.book_count.desc()).limit(
-                                        initial_suggestions)],
+                                        initial_suggestions).all()],
                 'finished': False
             }
     elif suggestion_type.lower() == 'books':
         book_number = Book.query.count()
-        if book_number < initial_suggestions:
+        if book_number <= initial_suggestions:
             return {
                 'suggestions': [b.title + ';' + str(b.id)
                                 for b in Book.query.all()],
@@ -369,8 +369,9 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
         else:
             return {
                 'suggestions': [b.title + ';' + str(b.id)
-                                for b in Book.query.limit(
-                                        initial_suggestions)],
+                                for b in Book.query\
+                                .order_by(Book.title)\
+                                .limit(initial_suggestions).all()],
                 'finished': False
             }
 
@@ -384,7 +385,7 @@ def get_suggestions(query, suggestion_type, limited_number, amount=None):
             suggestions = suggestions.filter((Entity.name_tsvector.match(
                                                  query + ':*',
                                                  postgresql_regconfig='simple')
-                                            ) | (Entity.surname.match(
+                                            ) | (Entity.surname_tsvector.match(
                                                  query + ':*',
                                                  postgresql_regconfig='simple')
                                             ))
@@ -393,9 +394,13 @@ def get_suggestions(query, suggestion_type, limited_number, amount=None):
         Entity = Book
         suggestions = db.session.query(Entity.id, Entity.title)
         if query:
-            suggestions = suggestions.filter(Entity.title.match(
+            suggestions = suggestions.filter(Entity.title_tsvector.match(
                                                 query + ':*',
                                                 postgresql_regconfig='simple'))
+            suggestions = suggestions.order_by(db.func.ts_rank(
+                Entity.title_tsvector,
+                (query + ':*')
+            ))
     suggestions_count = suggestions.count()
     suggestions = suggestions.offset(amount).limit(limited_number)
 

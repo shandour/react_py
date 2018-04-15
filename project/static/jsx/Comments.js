@@ -282,7 +282,7 @@ class Comments extends React.Component{
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
-        let req = new Request(`/api/${this.props.entityType}s/${this.props.entityId}/comments/add`, options);
+        let req = new Request(`/api/${this.props.entityType}s/comments/${this.props.entityId}`, options);
         fetch(req).then(resp => {
             if (resp.ok) {
                 return resp.json();

@@ -20,3 +20,5 @@ Werkzeug==0.13
 WTForms==2.1
 sortedcontainers-1.5.9
 loremipsum==1.0.5
+mock-2.0.0
+Flask-Testing-0.7.1

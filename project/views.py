@@ -283,7 +283,7 @@ def comments(comment_type, entity_id):
 
 
 #like, dislike or revert to neutral
-@api_bp.route('/comments/attitude', methods=['GET', 'POST'])
+@api_bp.route('/comments/attitude', methods=['POST'])
 def attitude_on_comment():
     if not request.method == 'POST':
         return Response(status='405')
@@ -309,9 +309,9 @@ def delete_comment(comment_type, comment_id):
     return Response(status='200')
 
 
-@api_bp.route('/<string:comment_type>/<int:entity_id>/comments/add',
+@api_bp.route('/<string:comment_type>/comments/<int:comment_id>',
            methods=['POST'])
-def add_comment(comment_type, entity_id):
+def add_comment(comment_type, comment_id):
     if not current_user.is_authenticated:
         return Response(status='403')
     form = AddCommentForm(request.form)
@@ -319,7 +319,7 @@ def add_comment(comment_type, entity_id):
         comment = add_one_comment(form,
                                   current_user.id,
                                   comment_type[:-1],
-                                  entity_id)
+                                  comment_id)
         payload = jsonify({'new_comment': comment, 'success': True})
         return payload
     else:
