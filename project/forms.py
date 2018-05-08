@@ -1,29 +1,31 @@
 from wtforms import (StringField, TextAreaField, FieldList, FormField,
-                     validators, Form, Field, ValidationError)
+                     validators, Form, ValidationError)
 from flask_wtf import FlaskForm
-from flask_security.forms import RegisterForm, LoginForm
+from flask_security.forms import RegisterForm
+from flask_wtf.csrf import CSRFProtect
 
 from project.db_operations import check_if_author_exists, check_if_book_exists
 
-from flask_wtf.csrf import CSRFProtect
 
 csrf = CSRFProtect()
 
 
- # a tweaked StringField that strips values to exclude
- # incorrect addition, editing and sorting behaviour
+# a tweaked StringField that strips values to exclude
+# incorrect addition, editing and sorting behaviour
 class CleanStringField(StringField):
     def process_formdata(self, valuelist):
         super(CleanStringField, self).process_formdata(valuelist)
         self.data = self.data.strip()
 
+
 class AddCommentForm(FlaskForm):
     topic = CleanStringField('Topic', [validators.Optional()])
     text = TextAreaField('Text', [validators.InputRequired()])
 
+
 class SimpleBookForm(Form):
     title = CleanStringField('Title', [validators.Length(max=200),
-                                  validators.InputRequired()])
+                                       validators.InputRequired()])
     overview = TextAreaField('Description', [validators.Optional(),
                                              validators.Length(max=2000)])
     content = TextAreaField('Content', [validators.InputRequired()])
@@ -31,9 +33,9 @@ class SimpleBookForm(Form):
 
 class AddAuthorForm(FlaskForm):
     first_name = CleanStringField('First name', [validators.Length(max=50),
-                                            validators.InputRequired()])
+                                                 validators.InputRequired()])
     last_name = CleanStringField('Last name', [validators.Length(max=50),
-                                          validators.Optional()])
+                                               validators.Optional()])
     description = TextAreaField('Description', [validators.Optional(),
                                                 validators.Length(max=2000)])
     books = FieldList(FormField(SimpleBookForm), min_entries=0)
@@ -46,31 +48,35 @@ class AddAuthorForm(FlaskForm):
         length = len(self.books)
         while (count < length):
             if self.books[count].title.errors:
-                errors['books'][count] = {'title': self.books[count]\
-                                          .title.errors}
+                errors['books'][count] = {'title': self.books[count]
+                                                       .title
+                                                       .errors}
             if self.books[count].overview.errors:
                 if count in errors['books']:
                     errors['books'][count]['overview'] = self.books[count]\
                                                              .overview.errors
                 else:
-                    errors['books'][count] = {'overview': self.books[count]\
-                                              .overview.errors}
+                    errors['books'][count] = {'overview': self.books[count]
+                                                              .overview
+                                                              .errors}
             if self.books[count].content.errors:
                 if count in errors['books']:
                     errors['books'][count]['content'] = self.books[count]\
-                                                            .content.errors
+                                                            .content\
+                                                            .errors
                 else:
-                    errors['books'][count] = {'content': self.books[count]\
-                                              .content.errors}
+                    errors['books'][count] = {'content': self.books[count]
+                                                             .content
+                                                             .errors}
             count += 1
         return errors
 
 
 class EditAuthorForm(FlaskForm):
     first_name = CleanStringField('First name', [validators.Length(max=50),
-                                      validators.InputRequired()])
+                                                 validators.InputRequired()])
     last_name = CleanStringField('Last name', [validators.Length(max=50),
-                                        validators.Optional()])
+                                               validators.Optional()])
     description = TextAreaField('Description', [validators.Optional(),
                                                 validators.Length(max=2000)])
     book_tags = StringField('Books', [validators.Optional()])
@@ -83,7 +89,7 @@ class EditAuthorForm(FlaskForm):
 
 class AddBookForm(FlaskForm):
     title = CleanStringField('Title', [validators.Length(max=200),
-                                  validators.InputRequired()])
+                                       validators.InputRequired()])
     description = TextAreaField('Description', [validators.Optional(),
                                                 validators.Length(max=2000)])
     text = TextAreaField('Content', [validators.InputRequired()])
@@ -99,12 +105,12 @@ class AddBookForm(FlaskForm):
 
 class CommentForm(FlaskForm):
     topic = CleanStringField('Topic',
-                        [validators.Optional(),
-                         validators.Length(max=500)])
+                             [validators.Optional(),
+                              validators.Length(max=500)])
     text = TextAreaField('Text', [validators.InputRequired()])
 
 
 # security forms
 class UpgradedRegisterForm(RegisterForm):
     username = CleanStringField('Username', [validators.Length(max=100),
-                                        validators.InputRequired()])
+                                             validators.InputRequired()])

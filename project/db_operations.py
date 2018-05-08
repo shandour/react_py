@@ -9,7 +9,7 @@ from project.models import Author, Book, AuthorComment, BookComment, User, db
 def get_all_authors_with_sections():
     """Returns a SortedDict of last name letters of corresponding authors"""
     authors = Author.query.all()
- 
+
     d = SortedDict()
     for a in authors:
         first_letter = a.surname[0].upper() if a.surname else a.name[0].upper()
@@ -23,7 +23,7 @@ def get_all_authors_with_sections():
                              'name': a.name,
                              'surname': a.surname})
 
-    #required to make SortedListWithKey JSON serializable
+    # required to make SortedListWithKey JSON serializable
     for letter in d:
         d[letter] = list(d[letter])
 
@@ -68,7 +68,7 @@ def get_book_by_id(id=None):
     return book
 
 
-#for comments invoke the get by sort option function
+# for comments invoke the get by sort option function
 def get_user_by_id(sort_dict, max_comments_per_page, user_id=None):
     user = User.query.get_or_404(user_id)
     max_comments_per_page = max_comments_per_page
@@ -99,10 +99,12 @@ def get_user_by_id(sort_dict, max_comments_per_page, user_id=None):
 
 def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
     comments_per_page = max_comments_per_page
-    comments_type = (AuthorComment if sort_dict['comments_type'] == 'authors'
+    comments_type = (AuthorComment
+                     if sort_dict['comments_type'] == 'authors'
                      else BookComment)
-    comments_query = (comments_type.query
-                        .filter(comments_type.user_id == user_id))
+    comments_query = (comments_type
+                      .query
+                      .filter(comments_type.user_id == user_id))
 
     if sort_dict['sort_option'] == 'most-popular':
         sort_query = (comments_type.likes_count.asc()
@@ -118,10 +120,8 @@ def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.created_at.desc())
     elif sort_dict['sort_option'] == 'last-change':
-        comments_query = comments_query.filter(comments_type
-                                               .edited !=
-                                               comments_type
-                                               .created_at)
+        comments_query = comments_query.filter(
+            comments_type.edited != comments_type.created_at)
         sort_query = (comments_type.edited.asc()
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.edited.desc())
