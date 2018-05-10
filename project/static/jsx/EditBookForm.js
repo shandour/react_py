@@ -132,7 +132,12 @@ class EditBookForm extends React.Component {
         let tags = this.state.author_tags;
         let suggestions = this.state.suggestions;
         let tag_id = suggestions.filter(suggestion => suggestion.startsWith(tag))[0];
-        tag_id = tag_id.slice(tag_id.lastIndexOf(';')+1);
+        tag_id = Number(tag_id.slice(tag_id.lastIndexOf(';') + 1));
+
+        let current_ids = tags.map(obj => obj.id);
+        if (current_ids.includes(tag_id)) {
+            return;
+        }
 
         tags.push({
             id: tag_id,
@@ -199,12 +204,19 @@ class EditBookForm extends React.Component {
                        headers: myHeaders,
                        credentials: "same-origin"};
         let req = new Request(`/api/books/${this.props.match.params.bookId}`, options);
-        fetch(req).then(resp => resp.json()).then(data => {
-            if (data == 'success') {
+        
+        fetch(req).then(resp => {
+            if (!resp.ok) {
+                throw resp.status;
+            } else if (resp.status == 204) {
                 this.setState({successStatus: true});
-                return;
+            } else {
+                return resp.json();
             }
+        }).then(data => {
             this.setState({errors: data});
+        }).catch(errCode => {
+            console.log(`Aborted with the error code ${errCode}`);
         });
     }
 

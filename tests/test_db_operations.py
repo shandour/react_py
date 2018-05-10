@@ -36,9 +36,8 @@ class TestDbOperations(TestCase):
         app = create_app(settings_module='tests.settings_test')
         return app
 
-
     def setUp(self):
-        self.mocks =  {
+        self.mocks = {
             'db': None,
             'Author': None,
             'Book': None,
@@ -62,9 +61,8 @@ class TestDbOperations(TestCase):
             else:
                 patcher = patch(
                     'project.db_operations.{}'.format(i))
-            self.mocks[i]= patcher.start()
+            self.mocks[i] = patcher.start()
             self.addCleanup(patcher.stop)
-
 
     def test_get_all_authors_with_sections_makes_calls_and_returns_dict(self):
         self.mocks['Author'].query.all.return_value = []
@@ -72,16 +70,13 @@ class TestDbOperations(TestCase):
         self.mocks['Author'].query.all.assert_called_once()
         self.assertEqual(result, {'authors': SortedDict()})
 
-
     def test_get_author_by_id_makes_calls(self):
         get_author_by_id(9)
         self.mocks['Author'].query.get_or_404.assert_called_once_with(9)
 
-
     def test_get_book_by_id_makes_calls(self):
         get_book_by_id(3)
         self.mocks['Book'].query.get_or_404.assert_called_once_with(3)
-
 
     def test_get_user_by_id_returns_dict(self):
         user = self.mocks['User']()
@@ -111,7 +106,6 @@ class TestDbOperations(TestCase):
             }
         })
 
-
     def test_sort_user_comments_returns_dict(self):
         r = sort_user_comments(
             {'comments_type': 'authors',
@@ -122,10 +116,9 @@ class TestDbOperations(TestCase):
             4)
         self.assertEqual(r, {
             'comments': [],
-            'pages': self.mocks['AuthorComment']\
+            'pages': self.mocks['AuthorComment']
                 .query.filter().order_by().paginate().pages
         })
-
 
     def test_sort_user_comments_calls_db(self):
         r = sort_user_comments(
@@ -156,7 +149,6 @@ class TestDbOperations(TestCase):
                 error_out=False
             )
 
-
     def test_all_books_with_sections_returns_dict(self):
         self.mocks['Book'].query.all.return_value = []
         r = get_all_books_with_sections()
@@ -166,12 +158,10 @@ class TestDbOperations(TestCase):
         self.mocks['Book'].query.order_by().all.assert_called_once()
         self.assertEqual(r, {'books': SortedDict()})
 
-
     def test_anonymous_user_adds_author(self):
         create_anonymous_author()
         self.mocks['db'].session.add.assert_called_once()
         self.mocks['db'].session.commit.assert_called_once()
-
 
     def test_add_book_makes_calls_to_db(self):
         form = self.mocks['AddBookForm']()
@@ -189,7 +179,6 @@ class TestDbOperations(TestCase):
         )
         self.mocks['db'].session.commit.assert_called_once()
 
-
     def test_update_book_makes_calls_to_db(self):
         form = self.mocks['AddBookForm']()
         form.title.data = 't'
@@ -201,7 +190,6 @@ class TestDbOperations(TestCase):
         self.mocks['Book'].query.get.assert_called_once_with(4)
         self.mocks['Author'].query.get.assert_called_with('2')
         self.mocks['db'].session.commit.assert_called_once()
-
 
     def test_add_author_makes_calls_to_db(self):
         form = self.mocks['AddAuthorForm']()
@@ -222,7 +210,6 @@ class TestDbOperations(TestCase):
         self.mocks['db'].session.flush.assert_called_once()
         self.mocks['db'].session.commit.assert_called_once()
 
-
     def test_update_author_makes_calls_to_db(self):
         form = self.mocks['EditAuthorForm']()
         form.first_name.data = 'n2'
@@ -238,7 +225,6 @@ class TestDbOperations(TestCase):
             call('3')
         ])
         self.mocks['db'].session.commit.assert_called_once()
-
 
     def test_update_comment_makes_calls_to_db_and_returns_dict(self):
         form1 = self.mocks['CommentForm']()
@@ -258,7 +244,7 @@ class TestDbOperations(TestCase):
         self.mocks['BookComment'].query.get.assert_called_once_with(2)
         self.mocks['db'].session.commit.assert_has_calls([call(), call()])
         self.mocks['datetime'].datetime.utcnow\
-                                .assert_has_calls([call(), call()])
+            .assert_has_calls([call(), call()])
 
         self.assertEqual(r1, {
             'topic': 'tpc',
@@ -269,7 +255,6 @@ class TestDbOperations(TestCase):
             'text': 'tt',
             'edited': self.mocks['datetime'].datetime.utcnow()})
         self.assertEqual(r3, False)
-
 
     def test_check_if_author_exists_returns_false(self):
         author_ids = [1, 2, 3]
@@ -289,7 +274,6 @@ class TestDbOperations(TestCase):
         self.mocks['db'].session.query().filter().scalar.assert_called_once()
         self.assertEqual(r, False)
 
-
     def test_check_if_book_exists_returns_false(self):
         book_ids = [2, 1, 3]
         r = check_if_book_exists(book_ids)
@@ -308,9 +292,8 @@ class TestDbOperations(TestCase):
         self.mocks['db'].session.query().filter().scalar.assert_called_once()
         self.assertEqual(r, False)
 
-
     def test_suggestions_initial_returns_dicts(self):
-        #authors
+        # authors
         self.mocks['Author'].query.count\
             .return_value = self.app.config['INITIAL_SUGGESTIONS_NUMBER'] - 1
         a1 = self.mocks['Author']()
@@ -330,7 +313,7 @@ class TestDbOperations(TestCase):
             'finished': True
         })
 
-        #books
+        # books
         self.mocks['Book'].query.count\
             .return_value = self.app.config['INITIAL_SUGGESTIONS_NUMBER'] + 1
         b1 = self.mocks['Book']()
@@ -354,7 +337,6 @@ class TestDbOperations(TestCase):
             'suggestions': ['tl;12'],
             'finished': False
         })
-
 
     def test_get_suggestions_returns_dict(self):
         self.mocks['db'].session.query().count\
@@ -420,7 +402,6 @@ class TestDbOperations(TestCase):
             'suggestions': ['not found'],
             'finished': False
         })
-
 
     def test_all_author_comments_by_author_id_returns_dict(self):
         u = self.mocks['User']()
@@ -493,7 +474,6 @@ class TestDbOperations(TestCase):
             'comments_left': False
         })
 
-
     def test_get_all_book_comments_by_book_id(self):
         u = self.mocks['User']()
         u.username = 'username2'
@@ -556,7 +536,6 @@ class TestDbOperations(TestCase):
             'comments_left': False
         })
 
-
     def test_add_comment_returns_author_comments_dict(self):
         form = self.mocks['CommentForm']()
         form.topic.data = 'topic'
@@ -587,7 +566,6 @@ class TestDbOperations(TestCase):
             'current_user_wrote': True
         })
 
-
     def test_add_comments_returns_book_comments_dict(self):
         form = self.mocks['CommentForm']()
         form.topic.data = 'topic'
@@ -617,7 +595,6 @@ class TestDbOperations(TestCase):
             'username': self.mocks['BookComment']().user.username,
             'current_user_wrote': True
         })
-
 
     def test_react_to_comment_returns_liked_author_comment_dict(self):
         r = react_to_comment(
@@ -651,7 +628,6 @@ class TestDbOperations(TestCase):
             'likes_count': self.mocks['BookComment'].likes_count.__sub__()
         })
 
-
     def test_delete_comment_deletes(self):
         delete_comment('authors', 2)
         self.mocks['AuthorComment'].query.get.assert_called_once_with(2)
@@ -665,27 +641,24 @@ class TestDbOperations(TestCase):
            self.mocks['BookComment'].query.get())
         self.mocks['db'].session.commit.assert_called()
 
-
     def test_delete_book_or_author_deletes(self):
         delete_book_or_author('authors', 2)
         self.mocks['Author'].query.get.assert_called_once_with(2)
         self.mocks['db'].session.delete.assert_called_with(
             self.mocks['Author'].query.get()
         )
-        
+
         delete_book_or_author('books', 3)
         self.mocks['Book'].query.get.assert_called_once_with(3)
         self.mocks['db'].session.delete.assert_called_with(
             self.mocks['Book'].query.get()
         )
 
-
     def test_check_if_user_wrote_comment_returns_True(self):
         self.mocks['AuthorComment'].query.get().user_id = 1
         r = check_if_user_wrote_comment(1, 2, 'author')
         self.mocks['AuthorComment'].query.get.assert_called_with(2)
         self.assertEqual(r, True)
-
 
     def test_check_if_user_can_edit_entity_returns_False(self):
         self.mocks['Book'].query.get_or_404().user_id = 90922

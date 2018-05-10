@@ -26,7 +26,6 @@ import {AuthorAddForm} from './AuthorAddForm.js';
 import {BookAddForm} from './BookAddForm.js';
 import {EditAuthorForm} from './EditAuthorForm.js';
 import {EditBookForm} from './EditBookForm.js';
-import {Random} from './Random.js';
 import {Code404Error} from './Code404Error.js';
 import {Logout, Login} from './LoginLogoutHelpers.js';
 import {RegisterUser} from './RegisterUser.js';
@@ -135,7 +134,6 @@ class App extends React.Component {
                 <li><NavLink to="/books" activeClassName='active-navlink'>Books</NavLink></li>
                 <li><NavLink to="/authors" activeClassName='active-navlink'>Authors</NavLink></li>
                 <li><NavLink to='/about' activeClassName='active-navlink'>About</NavLink></li>
-                <li><NavLink to='/random' activeClassName='active-navlink'>Random</NavLink></li>
                 </Nav>
                 </Navbar.Collapse>
                 </Col>
@@ -166,8 +164,6 @@ class App extends React.Component {
 
 
                 <Route exact path="/about" component={About}/>
-
-                <Route exact path='/random' component={Random}/>
 
                 <Route exact path="/logout" render={() => <Logout logout={this.handleLogout}/>}/>
 

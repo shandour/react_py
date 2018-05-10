@@ -69,8 +69,11 @@ class AuthorAddForm extends React.Component {
                 first_name: "",
                 last_name: "",
                 description: ""
-            }, books: [],
-            errors: {}};
+            },
+            books: [],
+            errors: {},
+            submitSuccessful: false
+        };
     }
 
     handleSubmit(e) {
@@ -90,7 +93,15 @@ class AuthorAddForm extends React.Component {
                        headers: myHeaders,
                        credentials: "same-origin"};
         let req = new Request('/api/authors/add', options);
-        fetch(req).then(resp => resp.json()).then(data => {
+        fetch(req).then(resp => {
+            if (resp.status == 201) {
+                this.setState({submitSuccessful: true});
+            } else if (!resp.ok) {
+                throw resp.status;
+            } else {
+                return resp.json();
+            }
+        }).then(data => {
             this.setState({errors: data});
         });
     }
@@ -173,7 +184,7 @@ class AuthorAddForm extends React.Component {
         if (!this.props.loggedIn) {
             return(<Redirect to='/login'/>)
         }
-        const successStatus = this.state.errors.success ? true: false;
+
         let n = this.state.booksCounter;
         const booksField = getBookFields.bind(this)();
 
@@ -204,7 +215,7 @@ class AuthorAddForm extends React.Component {
                 <FormControl type="submit" value='Submit' id="submit-button"/>
                 </form>
 
-            {successStatus &&
+            {this.state.submitSuccessful &&
              <Redirect to="/authors"/>
             }
                             </div>

@@ -17,7 +17,7 @@ class BookAddForm extends React.Component {
     constructor(props){
         super(props);
         this.state = {
-            successStatus: false,
+            submitSuccessful: false,
             errors: [],
             book: {
                 title: '',
@@ -162,12 +162,18 @@ class BookAddForm extends React.Component {
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
         let req = new Request('/api/books/add', options);
-        fetch(req).then(resp => resp.json()).then(data => {
-            if (data == 'success') {
-                this.setState({successStatus: true});
-                return;
+        fetch(req).then(resp =>{
+            if (resp.status == 201) {
+                this.setState({submitSuccessful: true});
+            } else if (!resp.ok) {
+                throw resp.status;
+            } else {
+                resp.json();
             }
+        }).then(data => {
             this.setState({errors: data});
+        }).catch(errCode => {
+            console.log(`Aborted with the error code ${errCode}`);
         });
     }
 
@@ -183,7 +189,7 @@ class BookAddForm extends React.Component {
             return <Redirect to='/login'/>;
         }
 
-        const {author_tags, suggestions, successStatus} = this.state;
+        const {author_tags, suggestions, submitSuccessful} = this.state;
 
         const bookFields = Object.keys(this.state.book).map((k) => {
             const state = typeof this.state.errors[k] !== 'undefined' ? "error": null;
@@ -232,7 +238,7 @@ class BookAddForm extends React.Component {
 
             </form>
 
-            {successStatus &&
+            {submitSuccessful &&
              <Redirect to="/books"/>
             }
 

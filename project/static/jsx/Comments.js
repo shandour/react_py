@@ -118,9 +118,8 @@ class Comment extends React.Component {
                 throw 'An error while processing your request';
             }).then(data => {
                 let commentInfo = Object.assign({}, this.state.commentInfo);
-                commentInfo['liked'] = data['liked'];
-                commentInfo['disliked'] = data['disliked'];
-                commentInfo['likes_count'] = data['likes_count'];
+                commentInfo['user_reaction'] = data['user_reaction'];
+                commentInfo['rating'] = data['rating'];
                 this.setState({commentInfo});
             }).catch(err => {console.log(err);});
         }
@@ -147,8 +146,8 @@ class Comment extends React.Component {
         let topicState = typeof errors.topic !== 'undefined' && errors.topic.length > 0? 'error': null;
         let textState = typeof errors.text !== 'undefined' && errors.text.length > 0? 'error': null;
 
-        let liked = this.state.commentInfo.liked ? 'primary': 'default';
-        let disliked = this.state.commentInfo.disliked ? 'primary': 'default';
+        let liked = this.state.commentInfo.user_reaction == 'liked' ? 'primary': 'default';
+        let disliked = this.state.commentInfo.user_reaction == 'disliked' ? 'primary': 'default';
 
         if (deleteWarning) {
             return (
@@ -211,7 +210,7 @@ class Comment extends React.Component {
              <div>
              <span className='delete-button'> <Button name ='delete-button' onClick={this.toggleDeleteAlert} disabled={this.props.deleteDisabled}><Glyphicon glyph='glyphicon glyphicon-remove' /></Button> </span>
              <div>
-              Likes: <Badge>{commentInfo.likes_count}</Badge>
+              Rating: <Badge>{commentInfo.rating}</Badge>
              <span className='attitude-button'><Button id={commentInfo.id} name='like' onClick={this.reactToComment} bsStyle={liked}><Glyphicon glyph='glyphicon glyphicon-thumbs-up'/></Button></span>
              <span className='attitude-button'><Button id={commentInfo.id} name='dislike' onClick={this.reactToComment} bsStyle={disliked}><Glyphicon glyph='glyphicon glyphicon-thumbs-down'/></Button></span>
              </div>
@@ -375,11 +374,10 @@ class Comments extends React.Component{
                     id: c.id,
                     topic: c.topic,
                     text: c.text,
-                    likes_count: c.likes_count,
+                    rating: c.rating,
                     created_at: c.created_at,
                     edited: c.edited,
-                    liked: c.liked,
-                    disliked: c.disliked
+                    user_reaction: c.user_reaction
                 };
                 const username = c.username;
                 const disabled = c.current_user_wrote ? false : true;

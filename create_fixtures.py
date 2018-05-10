@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from string import ascii_letters
-
 from random import choice, randint
 
 from loremipsum import get_paragraphs
@@ -11,8 +10,7 @@ from project.models import (
     Book,
     AuthorComment,
     BookComment,
-    User,
-    Role
+    User
 )
 
 
@@ -39,7 +37,7 @@ def create_fixtures(
                 user=user_list[0]
             )
         ],
-        book_count = 1
+        book_count=1
     )]
 
     while creation_iteration_number > 0:
@@ -70,19 +68,25 @@ def create_fixtures(
     db.session.flush()
     create_comments(max_comments_per_entity_number, use_randomized_max_number)
     db.session.commit()
-    db.engine.execute(AuthorComment.__table__.update().values(edited=AuthorComment.created_at))
-    db.engine.execute(BookComment.__table__.update().values(edited=BookComment.created_at))
+    db.engine.execute(
+        AuthorComment.__table__
+        .update().values(edited=AuthorComment.created_at))
+    db.engine.execute(
+        BookComment.__table__
+        .update().values(edited=BookComment.created_at))
 
 
 def return_random_string(min_letters, max_letters):
     return (
         "".join(choice(ascii_letters)
-                for x in range(randint(min_letters, max_letters))).
-                capitalize()
+                for x in range(randint(min_letters, max_letters)))
+        .capitalize()
     )
+
 
 def return_random_text(min_paragraphs, max_paragraphs):
     return " ".join(get_paragraphs(randint(min_paragraphs, max_paragraphs)))
+
 
 def create_users_list(users_number):
     user_name_set = set()
@@ -115,7 +119,10 @@ def create_users_list(users_number):
 
     return user_list
 
-def create_comments(max_comments_per_entity_number, use_randomized_max_number=False):
+
+def create_comments(
+        max_comments_per_entity_number,
+        use_randomized_max_number=False):
     book_list = Book.query.all()
     author_list = Author.query.all()
     user_list = User.query.all()
@@ -131,7 +138,6 @@ def create_comments(max_comments_per_entity_number, use_randomized_max_number=Fa
         author_list,
         user_list,
         use_randomized_max_number)
-
 
 
 def create_comments_helper(
@@ -166,7 +172,7 @@ def create_comments_helper(
                     )
                 )
 
-            comment.likes_count = (len(comment.users_liked) -
-                                   len(comment.users_disliked))
+            comment.rating = (len(comment.users_liked) -
+                              len(comment.users_disliked))
             e.comments.append(comment)
             comments_number -= 1

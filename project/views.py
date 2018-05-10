@@ -4,7 +4,8 @@ from flask import (
     jsonify,
     request,
     Response,
-    after_this_request
+    after_this_request,
+    abort
 )
 from flask_security import (
     current_user,
@@ -41,7 +42,6 @@ from project.db_operations import (
     update_comment,
     suggestions_initial,
     get_suggestions,
-    get_random_entity,
     get_all_author_comments_by_author_id,
     get_all_book_comments_by_book_id,
     check_if_user_wrote_comment,
@@ -62,90 +62,81 @@ def index_page(path):
 
 @api_bp.route('/authors')
 def authors():
-    authors = get_all_authors_with_sections()
-    resp = jsonify(authors)
-    return resp
+    return jsonify(get_all_authors_with_sections())
 
 
 @api_bp.route('/authors/<int:author_id>')
 def show_author(author_id):
-    author = jsonify(get_author_by_id(author_id))
-    return author
+    return jsonify(get_author_by_id(author_id))
 
 
 @api_bp.route('/authors/add', methods=['POST'])
 def add_author():
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
+
     form = AddAuthorForm(request.form)
 
     if form.validate_on_submit():
         add_one_author(form, current_user.id)
-        return jsonify({'success': 'success'})
+        return Response(status='201')
     else:
-        errors = form.get_dict_errors()
-        return jsonify(errors)
+        return jsonify(form.get_dict_errors())
 
 
 @api_bp.route('/authors/<int:author_id>', methods=['PUT'])
 def edit_author(author_id):
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     form = EditAuthorForm(request.form)
 
     if form.validate_on_submit():
         update_author(author_id, form)
-        return jsonify('success')
+        return Response(status='204')
     else:
-        errors = form.errors
-        return jsonify(errors)
+        return jsonify(form.errors)
 
 
 @api_bp.route('/books')
 def books():
-    books = get_all_books_with_sections()
-    resp = jsonify(books)
-    return resp
+    return jsonify(get_all_books_with_sections())
 
 
 @api_bp.route('/books/<int:book_id>')
 def show_book(book_id):
-    book = jsonify(get_book_by_id(book_id))
-    return book
+    return jsonify(get_book_by_id(book_id))
 
 
 @api_bp.route('/books/add', methods=['POST'])
 def add_book():
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     form = AddBookForm(request.form)
- 
+
     if form.validate_on_submit():
         add_one_book(form, current_user.id)
-        return jsonify('success')
+        return Response(status='201')
     else:
-        errors = form.errors
-        return jsonify(errors)
+        return jsonify(form.errors)
 
 
 @api_bp.route('/books/<int:book_id>', methods=['PUT'])
 def edit_book(book_id):
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     form = AddBookForm(request.form)
 
     if form.validate_on_submit():
         update_book(book_id, form)
-        return jsonify('success')
+        return Response(status='204')
     else:
-        errors = form.errors
-        return jsonify(errors)
+        return jsonify(form.errors)
 
 
 @api_bp.route('/can-user-edit-entity')
 def can_user_edit_entity():
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     roles = [r.name.lower() for r in current_user.roles]
     if not (ADMIN_ROLE in roles or EDITOR_ROLE in roles):
         if check_if_user_can_edit_entity(
@@ -157,7 +148,8 @@ def can_user_edit_entity():
     return Response(status='200')
 
 
-# suggestions for author and book tags: initial called when during React's componentDidMount
+# suggestions for author and book tags:
+# initial called when during React's componentDidMount
 @api_bp.route('/authors/suggestions')
 def authors_initial_suggestions():
     initial = request.args.get('initial')
@@ -203,55 +195,47 @@ def books_initial_suggestions():
 @api_bp.route('/<string:entity_type>/<int:entity_id>', methods=['DELETE'])
 def delete_book_or_author_from_db(entity_type, entity_id):
     if not entity_id:
-        return Response(status='404')
+        abort(404)
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     roles = [r.name.lower() for r in current_user.roles]
     if ((ADMIN_ROLE in roles or EDITOR_ROLE in roles)
         or check_if_user_can_edit_entity(
             entity_type[:-1],
             entity_id,
-            current_user.id)
-    ):
+            current_user.id)):
         delete_book_or_author(entity_type, entity_id)
         return Response(status='200')
-    return Response(status='403')
+    abort(403)
 
 
-#LOGIN LOGIC
+# LOGIN LOGIC
 @api_bp.route('/is-logged-in')
 @api_bp.route('/is-logged-in/<string:info>')
 def is_user_logged_in(info=None):
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     elif info is not None:
         resp = jsonify({
             'username': current_user.username,
         })
-        resp.status='200'
+        resp.status = '200'
         return resp
     else:
         return Response(status='200')
 
 
-#LOGOUT ASSISTANT
+# LOGOUT ASSISTANT
 @api_bp.route('/logout')
 def logout_current_user():
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     else:
         logout_user()
         return Response(status='200')
 
 
-#return random entity
-@api_bp.route('/random')
-def random():
-    entity_dict = get_random_entity()
-    return jsonify(entity_dict)
-
-
-#COMMENTS functionality
+# COMMENTS functionality
 @api_bp.route('/<string:comment_type>/<int:entity_id>/comments')
 def comments(comment_type, entity_id):
     if comment_type not in ['authors', 'books']:
@@ -278,17 +262,17 @@ def comments(comment_type, entity_id):
                                               int(chunk),
                                               highlight)
     )
-    comments['authenticated'] = current_user.is_authenticated;
+    comments['authenticated'] = current_user.is_authenticated
     return jsonify(comments)
 
 
-#like, dislike or revert to neutral
+# like, dislike or revert to neutral
 @api_bp.route('/comments/attitude', methods=['POST'])
 def attitude_on_comment():
     if not request.method == 'POST':
-        return Response(status='405')
+        abort(405)
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     attitude = request.args.get('attitude')
     comment_type = request.args.get('comment_type')
     comment_id = request.args.get('comment_id')
@@ -299,27 +283,29 @@ def attitude_on_comment():
     return jsonify(reaction)
 
 
-#invoke check_user_identity or see if user is admin
+# invoke check_user_identity or see if user is admin
 @api_bp.route('/<string:comment_type>/comments/<int:comment_id>',
               methods=['DELETE'])
 def delete_comment(comment_type, comment_id):
     if not check_user_identity(comment_id, comment_type[:-1]):
-        return Response(status='403')
+        abort(403)
     delete_one_comment(comment_type, comment_id)
     return Response(status='200')
 
 
 @api_bp.route('/<string:comment_type>/comments/<int:comment_id>',
-           methods=['POST'])
+              methods=['POST'])
 def add_comment(comment_type, comment_id):
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     form = AddCommentForm(request.form)
     if form.validate_on_submit():
         comment = add_one_comment(form,
                                   current_user.id,
                                   comment_type[:-1],
                                   comment_id)
+        if not comment:
+            abort(422)
         payload = jsonify({'new_comment': comment, 'success': True})
         return payload
     else:
@@ -337,27 +323,27 @@ def edit_comment(comment_type, comment_id):
     form = CommentForm(request.form)
     if form.validate_on_submit():
         comment = update_comment(comment_id, comment_type[:-1], form)
+        if not comment:
+            abort(422)
         payload = jsonify({'edited_comment': comment, 'success': True})
         return payload
     else:
         return jsonify({'errors': form.errors, 'success': False})
 
 
-#check if user can edit and tell client
+# check if user can edit and tell client
 @api_bp.route('/can-user-edit')
 def can_user_edit():
     comment_type = request.args.get('comment_type')
     comment_id = request.args.get('comment_id')
-    resp = Response()
     if not check_user_identity(comment_id, comment_type):
-        resp.status = '403'
-        return resp
+        abort(403)
     else:
-        resp.status = '200'
-        return resp
+        return Response(status='200')
 
 
-#check user identity: returns True if user is logged-in, wrote the comment or is admin
+# check user identity: returns True if user is logged-in,
+# wrote the comment or is admin
 def check_user_identity(comment_id, comment_type):
     roles = [r.name.lower() for r in current_user.roles]
     return (current_user.is_authenticated
@@ -366,12 +352,10 @@ def check_user_identity(comment_id, comment_type):
                      current_user.id,
                      comment_id,
                      comment_type
-                 )
-            )
-    )
+                 )))
 
 
-#custom login mechanism
+# custom login mechanism
 @api_bp.route('/login', methods=['POST'])
 @anonymous_user_required
 def login():
@@ -381,12 +365,10 @@ def login():
         login_user(form.user, remember=form.remember.data)
         return Response(status='202')
     else:
-        resp = jsonify(form.errors)
-        resp.status = '401'
-        return resp
+        return jsonify(form.errors), 401
 
 
-#custom register mechanism
+# custom register mechanism
 @api_bp.route('/register', methods=['POST'])
 @anonymous_user_required
 def register():
@@ -396,16 +378,14 @@ def register():
         login_user(user)
         return Response(status='202')
     else:
-        resp = jsonify(form.errors)
-        resp.status = '401'
-        return resp
+        return jsonify(form.errors), 401
 
 
-#custom change password mechanism
+# custom change password mechanism
 @api_bp.route('/change-password', methods=['PUT'])
 def change_password():
     if not current_user.is_authenticated:
-        return Response(status='403')
+        abort(403)
     form = ChangePasswordForm(request.form)
     if form.validate_on_submit():
         after_this_request(_commit)
@@ -413,15 +393,13 @@ def change_password():
                              form.new_password.data)
         return Response(status='202')
     else:
-        resp = jsonify(form.errors)
-        resp.status = '401'
-        return resp
+        return jsonify(form.errors), 401
 
 
 @api_bp.route('/get-user-comments')
 def get_user_comments_sorted():
     if not current_user.is_authenticated:
-            return Response(status='403')
+        abort(403)
     sort_dict = {
         'sort_option': request.args.get('sortOption'),
         'sort_direction': request.args.get('sortDirection'),

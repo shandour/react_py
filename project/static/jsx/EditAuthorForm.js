@@ -32,7 +32,8 @@ class EditAuthorForm extends React.Component {
                 first_name: "",
                 last_name: "",
                 description: ""
-            }, book_tags: [],
+            },
+            book_tags: [],
             suggestions: [''],
             initialFinished: false,
             intermediateFinished: false,
@@ -131,7 +132,12 @@ class EditAuthorForm extends React.Component {
         let tags = this.state.book_tags;
         let suggestions = this.state.suggestions;
         let tag_id = suggestions.filter(suggestion => suggestion.startsWith(tag))[0];
-        tag_id = tag_id.slice(tag_id.lastIndexOf(';')+1);
+        tag_id = Number(tag_id.slice(tag_id.lastIndexOf(';') + 1));
+
+        let current_ids = tags.map(obj => obj.id);
+        if (current_ids.includes(tag_id)) {
+            return;
+        }
 
         tags.push({
             id: tag_id,
@@ -198,17 +204,17 @@ class EditAuthorForm extends React.Component {
                        headers: myHeaders,
                        credentials: "same-origin"};
         let req = new Request(`/api/authors/${this.props.match.params.authorId}`, options);
+
         fetch(req).then(resp => {
             if (!resp.ok) {
                 throw resp.status;
-            }
-            return resp.json();
-        }).then(data => {
-            if (data == 'success') {
+            } else if (resp.status == 204) {
                 this.setState({successStatus: true});
             } else {
-                this.setState({errors: data});
+                return resp.json();
             }
+        }).then(data => {
+            this.setState({errors: data});
         }).catch(errCode => {
             console.log(`Aborted with the error code ${errCode}`);
         });

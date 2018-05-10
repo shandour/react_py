@@ -227,7 +227,7 @@ class UserCabinet extends React.Component {
                         <OverlayTrigger
                     placement='top'
                     overlay={<Tooltip id="tooltip">
-                             Likes count
+                             Rating
                              </Tooltip>}>
                         <Badge>{obj.attitude}</Badge>
                         </OverlayTrigger>
@@ -302,7 +302,7 @@ class UserCabinet extends React.Component {
 
                     <DropdownButton title='Sort comments' id='sorting-menu-dropdown' onSelect={(e) => {this.selectDropdown('sortOption', e)}}>
                     <MenuItem eventKey="most-popular" active={this.state.commentsDisplay.sortOption == 'most-popular'? true: false}>Most Popular</MenuItem>
-                    <MenuItem eventKey="most-hated" active={this.state.commentsDisplay.sortOption == 'most-hated'? true: false}>Most hated (only negative likes count)</MenuItem>
+                    <MenuItem eventKey="most-hated" active={this.state.commentsDisplay.sortOption == 'most-hated'? true: false}>Most hated (only with negative rating)</MenuItem>
                     <MenuItem eventKey="creation-date" active={this.state.commentsDisplay.sortOption == 'creation-date'? true: false}>Creation date</MenuItem>
                     <MenuItem eventKey="last-change" active={this.state.commentsDisplay.sortOption == 'last-change'? true: false}>Last change date (exclude unedited)</MenuItem>
                     <MenuItem eventKey="creation-change" active={this.state.commentsDisplay.sortOption == 'creation-change'? true: false}>Creation/last change date</MenuItem>
