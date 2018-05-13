@@ -391,8 +391,7 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
             return {
                 'suggestions': [b.title + ';' + str(b.id)
                                 for b in Book.query
-                                .order_by(db.func.ts_rank(
-                                    Book.title_tsvector, ''))
+                                .order_by(Book.title.desc())
                                 .limit(initial_suggestions_number).all()],
                 'finished': False
             }

@@ -325,7 +325,6 @@ class TestDbOperations(TestCase):
         r = suggestions_initial(
             'books',
             self.app.config['INITIAL_SUGGESTIONS_NUMBER'])
-        self.mocks['db'].func.ts_rank.assert_called_once()
         self.mocks['Book'].query.order_by().limit.assert_called_with(
             self.app.config['INITIAL_SUGGESTIONS_NUMBER']
         )
