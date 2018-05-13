@@ -10,7 +10,9 @@ from project.models import (
     Book,
     AuthorComment,
     BookComment,
-    User
+    User,
+    Stats,
+    constants_for_stats_dict
 )
 
 
@@ -39,6 +41,7 @@ def create_fixtures(
         ],
         book_count=1
     )]
+    all_books_count = 1
 
     while creation_iteration_number > 0:
         author = Author(
@@ -57,12 +60,22 @@ def create_fixtures(
                 text=return_random_text(1, 20),
                 user=choice(user_list)
             ))
+            all_books_count += 1
 
         author.books = book_list
         author.book_count = len(author.books)
 
         object_list.append(author)
         creation_iteration_number -= 1
+
+    Stats.query\
+        .filter(Stats.entity_name ==
+                constants_for_stats_dict['AUTHORS_NUMBER'])\
+        .update({Stats.count: len(object_list)})
+    Stats.query\
+        .filter(Stats.entity_name ==
+                constants_for_stats_dict['BOOKS_NUMBER'])\
+        .update({Stats.count: all_books_count})
 
     db.session.add_all(object_list)
     db.session.flush()
@@ -115,7 +128,6 @@ def create_users_list(users_number):
         iteration += 1
 
     db.session.add_all(user_list)
-    db.session.flush()
 
     return user_list
 

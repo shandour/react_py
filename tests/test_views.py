@@ -12,7 +12,6 @@ class TestView(TestCase):
         app = create_app(settings_module='tests.settings_test')
         return app
 
-
     def setUp(self):
         self.mocks = {
             'get_all_authors_with_sections': None,
@@ -52,18 +51,15 @@ class TestView(TestCase):
             self.mocks[i] = patcher.start()
             self.addCleanup(patcher.stop)
 
-
     def test_index_returns_template(self):
         self.client.get('/')
         self.assert_template_used('index.html')
-
 
     def test_authors_returns_json(self):
         self.mocks['get_all_authors_with_sections'].return_value = 'aaa'
         r = self.client.get('/api/authors')
         self.assertIsInstance(r, Response)
         self.assertEqual(r.data, '"aaa"\n')
-
 
     def test_show_author_returns_author_json(self):
         self.mocks['get_author_by_id'].return_value = 1
@@ -72,7 +68,6 @@ class TestView(TestCase):
         self.assertIsInstance(r, Response)
         self.assertEqual(r.data, '1\n')
 
-
     def test_add_author_returns_json(self):
         self.mocks['current_user'].is_authenticated = True
         form_inst = self.mocks['AddAuthorForm'].return_value
@@ -80,18 +75,16 @@ class TestView(TestCase):
         self.mocks['add_one_author'].assert_called_with(
             form_inst, self.mocks['current_user'].id
         )
-        self.assertEqual(r.data, '{\n  "success": "success"\n}\n')
-
+        self.assertEqual(r.status_code, 201)
 
     def test_add_author_returns_error_json(self):
         self.mocks['current_user'].is_authenticated = True
         form_inst = self.mocks['AddAuthorForm'].return_value
         form_inst.validate_on_submit.return_value = False
-        form_inst.get_dict_errors.return_value ='error'
+        form_inst.get_dict_errors.return_value = 'error'
         r = self.client.post('/api/authors/add')
         form_inst.get_dict_errors.assert_called_once()
         self.assertEqual(r.data, '"error"\n')
-
 
     def test_edit_author_returns_json(self):
         self.mocks['current_user'].is_authenticated = True
@@ -99,19 +92,17 @@ class TestView(TestCase):
         form_inst = self.mocks['EditAuthorForm'].return_value
         r = self.client.put('/api/authors/3')
         self.mocks['update_author'].assert_called_with(3, form_inst)
-        self.assertEqual(r.data, '"success"\n')
+        self.assertEqual(r.status_code, 204)
 
         form_inst.validate_on_submit.return_value = False
         form_inst.errors = 'errors'
         r = self.client.put('/api/authors/3')
         self.assertEqual(r.data, '"errors"\n')
 
-
     def test_can_user_edit_entity_returns_403(self):
         self.mocks['current_user'].is_authenticated = False
         r = self.client.get('/api/can-user-edit-entity')
         self.assertEqual(r.status_code, 403)
-
 
     def test_can_user_edit_entity_returns_200(self):
         self.mocks['current_user'].is_authenticated = True
@@ -125,7 +116,6 @@ class TestView(TestCase):
             10
         )
         self.assertEqual(r.status_code, 200)
-
 
     def test_authors_initial_suggestions_returns_json(self):
         self.mocks['suggestions_initial'].return_value = 'initial'
@@ -146,7 +136,6 @@ class TestView(TestCase):
         )
         self.assertEqual(r.data, '"suggestions"\n')
 
-
     def test_books_initial_suggestions_returns_json(self):
         self.mocks['suggestions_initial'].return_value = 'initial_b'
         r = self.client.get('/api/books/suggestions?initial=true')
@@ -166,7 +155,6 @@ class TestView(TestCase):
         )
         self.assertEqual(r.data, '"suggestions_b"\n')
 
-
     def test_delete_book_or_author_from_db_returns_403(self):
         self.mocks['current_user'].is_authenticated = False
         r = self.client.delete('/api/authors/3')
@@ -177,7 +165,6 @@ class TestView(TestCase):
         self.mocks['check_if_user_can_edit_entity'].return_value = False
         r = self.client.delete('/api/books/3')
         self.assertEqual(r.status_code, 403)
-
 
     def test_delete_book_or_author_from_db_returns_200(self):
         self.mocks['current_user'].is_authenticated = True
@@ -195,7 +182,6 @@ class TestView(TestCase):
         )
         self.assertEqual(r.status_code, 200)
 
-
     def test_is_user_logged_in_returns_403_and_200_properly(self):
         self.mocks['current_user'].is_authenticated = False
         r = self.client.get('/api/is-logged-in')
@@ -205,14 +191,12 @@ class TestView(TestCase):
         r = self.client.get('/api/is-logged-in')
         self.assertEqual(r.status_code, 200)
 
-
     def test_is_user_logged_in_returns_json(self):
         self.mocks['current_user'].is_authenticated = True
         self.mocks['current_user'].username = 'usrnm'
         r = self.client.get('/api/is-logged-in/info')
         self.assertEqual(r.status, '200')
         self.assertEqual(r.data, '{\n  "username": "usrnm"\n}\n')
-
 
     def test_logout_current_user_returns_403_or_logs_out_with_200(self):
         self.mocks['current_user'].is_authenticated = False
@@ -223,7 +207,6 @@ class TestView(TestCase):
         r = self.client.get('/api/logout')
         self.mocks['logout_user'].assert_called_once()
         self.assertEqual(r.status_code, 200)
-
 
     def test_comments_returns_json(self):
         self.mocks['get_all_author_comments_by_author_id']\
@@ -243,7 +226,6 @@ class TestView(TestCase):
             ('{\n  "authenticated": false, \n  '
              '"comments": "author comments"\n}\n'))
 
-
     def test_attitude_on_comment_returns_json(self):
         self.mocks['current_user'].is_authenticated = False
         r = self.client.post('/api/comments/attitude'
@@ -262,20 +244,17 @@ class TestView(TestCase):
         )
         self.assertEqual(r.data, '"liked comment"\n')
 
-
     def test_delete_comment_returns_403_and_200(self):
         self.mocks['check_user_identity'].return_value = False
         r = self.client.delete('/api/books/comments/5')
         self.mocks['check_user_identity'].assert_called_with(5, 'book')
         self.assertEqual(r.status_code, 403)
 
-
         self.mocks['check_user_identity'].return_value = True
         r = self.client.delete('/api/books/comments/5')
         self.mocks['check_user_identity'].assert_called_with(5, 'book')
         self.mocks['delete_one_comment'].assert_called_once_with('books', 5)
         self.assertEqual(r.status_code, 200)
-
 
     def test_add_comment_returns_json(self):
         self.mocks['check_user_identity'].return_value = True
@@ -295,7 +274,6 @@ class TestView(TestCase):
             '{\n  "new_comment": "comment", \n  "success": true\n}\n'
         )
 
-
     def test_edit_comment_returns_json(self):
         self.mocks['check_user_identity'].return_value = True
         self.mocks['update_comment'].return_value = 'updated comment'
@@ -314,7 +292,6 @@ class TestView(TestCase):
              ' \n  "success": true\n}\n')
         )
 
-
     def test_can_user_edit_returns_200(self):
         self.mocks['check_user_identity'].return_value = True
         r = self.client.get('/api/can-user-edit'
@@ -325,7 +302,6 @@ class TestView(TestCase):
         )
         self.assertEqual(r.status_code, 200)
 
-
     def test_login_returns_errors(self):
         form = self.mocks['LoginForm'].return_value
         form.validate_on_submit.return_value = False
@@ -335,18 +311,16 @@ class TestView(TestCase):
         self.assertEqual(r.status_code, 401)
         self.assertEqual(r.data, '"errors"\n')
 
-
     def test_register_register_logs_in_and_returns_200(self):
         form = self.mocks['UpgradedRegisterForm'].return_value
         form.validate_on_submit.return_value = True
         form.to_dict.return_value = {'e': 'e'}
-        self.mocks['register_user'].return_value ='registered'
+        self.mocks['register_user'].return_value = 'registered'
 
         r = self.client.post('/api/register')
         self.mocks['register_user'].assert_called_once_with(**{'e': 'e'})
         self.mocks['login_user'].assert_called_once_with('registered')
         self.assertEqual(r.status_code, 202)
-
 
     def test_change_password_changes_password(self):
         form = self.mocks['ChangePasswordForm'].return_value
@@ -362,27 +336,24 @@ class TestView(TestCase):
         )
         self.assertEqual(r.status_code, 202)
 
-
-    def test_get_user_comments_sorted_returns_user_json(self):
+    def test_get_user_author_comments_sorted_returns_user_json(self):
         self.mocks['current_user'].is_authenticated = True
         self.mocks['sort_user_comments'].return_value = 'user comments'
 
         r = self.client.get('/api/get-user-comments?sortOption=most-popular&'
                             'sortDirection=asc&commentsType=authors&page=1')
         self.mocks['sort_user_comments'].assert_called_once_with(
-             {
-                 'sort_option': 'most-popular',
-                 'sort_direction': 'asc',
-                 'comments_type': 'authors',
-                 'page': '1'
-             },
+            {
+                'sort_option': 'most-popular',
+                'sort_direction': 'asc',
+                'comments_type': 'authors',
+                'page': '1'
+            },
             self.app.config['USER_CABINET_PAGINATION_PER_PAGE'],
-            self.mocks['current_user'].id
-        )
+            self.mocks['current_user'].id)
         self.assertEqual(r.data, '"user comments"\n')
 
-
-    def test_get_user_comments_sorted_returns_user_json(self):
+    def test_get_user_book_comments_sorted_returns_user_json(self):
         self.mocks['current_user'].is_authenticated = True
         self.mocks['get_user_by_id'].return_value = 'sorted comments'
 
@@ -390,13 +361,12 @@ class TestView(TestCase):
                             'sortDirection=desc&commentsType=books&page=3&'
                             'initial=true')
         self.mocks['get_user_by_id'].assert_called_once_with(
-             {
-                 'sort_option': 'most-hated',
-                 'sort_direction': 'desc',
-                 'comments_type': 'books',
-                 'page': '3'
-             },
+            {
+                'sort_option': 'most-hated',
+                'sort_direction': 'desc',
+                'comments_type': 'books',
+                'page': '3'
+            },
             self.app.config['USER_CABINET_PAGINATION_PER_PAGE'],
-            self.mocks['current_user'].id
-        )
+            self.mocks['current_user'].id)
         self.assertEqual(r.data, '"sorted comments"\n')

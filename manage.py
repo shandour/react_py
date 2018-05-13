@@ -2,11 +2,12 @@
 import click
 
 from project import create_app
-from project.models import db, User, Role
+from project.models import db, Role, Stats, constants_for_stats_dict
 from project.security import ADMIN_ROLE, EDITOR_ROLE, user_datastore
 from create_fixtures import create_fixtures as cf
 
 app = create_app()
+
 
 @app.cli.command()
 @click.confirmation_option(
@@ -18,8 +19,9 @@ def create_db():
 
     db.session.add_all(
         [Role(name=ADMIN_ROLE, description='The site Deity'),
-         Role(name=EDITOR_ROLE, description='Can add and edit items')]
-    )
+         Role(name=EDITOR_ROLE, description='Can add and edit items'),
+         Stats(entity_name=constants_for_stats_dict['AUTHORS_NUMBER']),
+         Stats(entity_name=constants_for_stats_dict['BOOKS_NUMBER'])])
     db.session.commit()
 
 
@@ -64,14 +66,14 @@ def add_user(username, email, password, role):
 
 @app.cli.command()
 @click.option('-i', '--iteration_number',
-                type=int,
-                default=1)
+              type=int,
+              default=1)
 @click.option('-u', '--users_number',
-                type=int,
-                default=10)
+              type=int,
+              default=10)
 @click.option('-m', '--max_comments_per_entity',
-                type=int,
-                default=10)
+              type=int,
+              default=10)
 @click.option('-r', '--randomized_max_number',
               is_flag=True)
 @click.confirmation_option(

@@ -171,8 +171,8 @@ class TestDbOperations(TestCase):
         form.author_tags.data = '1 2'
 
         add_book(form, 2)
-        self.mocks['Author'].query.get.assert_has_calls([call('1'), call('2')])
-        self.mocks['db'].session.flush.assert_called()
+        self.mocks['Author'].id\
+            .in_.assert_called_once_with(form.author_tags.data.split(' '))
         self.mocks['User'].query.get_or_404.assert_called_once_with(2)
         self.mocks['db'].session.add.assert_called_once_with(
             self.mocks['Book']()
@@ -184,11 +184,11 @@ class TestDbOperations(TestCase):
         form.title.data = 't'
         form.text.data = 'txt'
         form.description.data = 'd'
-        form.author_tags.data = ' 2  '
+        form.author_tags.data = '2'
 
         update_book(4, form)
         self.mocks['Book'].query.get.assert_called_once_with(4)
-        self.mocks['Author'].query.get.assert_called_with('2')
+        self.mocks['Author'].id.in_.assert_called_with(['2'])
         self.mocks['db'].session.commit.assert_called_once()
 
     def test_add_author_makes_calls_to_db(self):
@@ -410,7 +410,7 @@ class TestDbOperations(TestCase):
         c.id = 2
         c.topic = 'tpc'
         c.text = 'txt'
-        c.likes_count = 4
+        c.rating = 4
         c.created_at = 'created'
         c.edited = 'edited'
         c.user = u
@@ -462,12 +462,11 @@ class TestDbOperations(TestCase):
                 'id': 2,
                 'topic': 'tpc',
                 'text': 'txt',
-                'likes_count': 4,
+                'rating': 4,
                 'created_at': 'created',
                 'edited': 'edited',
                 'username': 'username',
-                'liked': True,
-                'disliked': False,
+                'user_reaction': 'liked',
                 'current_user_wrote': True
             }],
             'chunk': 2,
@@ -481,7 +480,7 @@ class TestDbOperations(TestCase):
         c.id = 1
         c.topic = 'tpc2'
         c.text = 'txt2'
-        c.likes_count = 22
+        c.rating = 22
         c.created_at = 'created2'
         c.edited = 'edited2'
         c.user = u
@@ -524,12 +523,11 @@ class TestDbOperations(TestCase):
                 'id': 1,
                 'topic': 'tpc2',
                 'text': 'txt2',
-                'likes_count': 22,
+                'rating': 22,
                 'created_at': 'created2',
                 'edited': 'edited2',
                 'username': 'username2',
-                'liked': False,
-                'disliked': False,
+                'user_reaction': 'neutral',
                 'current_user_wrote': True
             }],
             'chunk': 2,
@@ -559,7 +557,7 @@ class TestDbOperations(TestCase):
             'id': self.mocks['AuthorComment']().id,
             'topic': 'topic',
             'text': 'text',
-            'likes_count': self.mocks['AuthorComment']().likes_count,
+            'rating': self.mocks['AuthorComment']().rating,
             'created_at': self.mocks['AuthorComment']().created_at,
             'edited': self.mocks['AuthorComment']().edited,
             'username': self.mocks['AuthorComment']().user.username,
@@ -589,7 +587,7 @@ class TestDbOperations(TestCase):
             'id': self.mocks['BookComment']().id,
             'topic': 'topic',
             'text': 'text',
-            'likes_count': self.mocks['BookComment']().likes_count,
+            'rating': self.mocks['BookComment']().rating,
             'created_at': self.mocks['BookComment']().created_at,
             'edited': self.mocks['BookComment']().edited,
             'username': self.mocks['BookComment']().user.username,
@@ -607,9 +605,8 @@ class TestDbOperations(TestCase):
         self.mocks['AuthorComment'].query.get.assert_called_once_with(1)
         self.mocks['db'].session.commit.assert_called_once()
         self.assertEqual(r, {
-            'liked': True,
-            'disliked': False,
-            'likes_count': self.mocks['AuthorComment'].likes_count.__add__()
+            'user_reaction': 'liked',
+            'rating': self.mocks['AuthorComment'].rating.__add__()
         })
 
     def test_react_to_comment_returns_disliked_book_comment_dict(self):
@@ -623,9 +620,8 @@ class TestDbOperations(TestCase):
         self.mocks['BookComment'].query.get.assert_called_once_with(4)
         self.mocks['db'].session.commit.assert_called_once()
         self.assertEqual(r, {
-            'liked': False,
-            'disliked': True,
-            'likes_count': self.mocks['BookComment'].likes_count.__sub__()
+            'user_reaction': 'disliked',
+            'rating': self.mocks['BookComment'].rating.__sub__()
         })
 
     def test_delete_comment_deletes(self):

@@ -3,7 +3,16 @@ import datetime
 
 from sortedcontainers import SortedDict, SortedListWithKey
 
-from project.models import Author, Book, AuthorComment, BookComment, User, db
+from project.models import (
+    Author,
+    Book,
+    AuthorComment,
+    BookComment,
+    User,
+    Stats,
+    db,
+    constants_for_stats_dict
+)
 
 
 def get_all_authors_with_sections():
@@ -97,6 +106,9 @@ def get_user_by_id(sort_dict, max_comments_per_page, user_id=None):
 
 
 def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
+    """Return comments that a user made,
+    sorted according to sort option in a given sort direction,
+    paginated"""
     comments_per_page = max_comments_per_page
     comments_type = (AuthorComment
                      if sort_dict['comments_type'] == 'authors'
@@ -176,10 +188,15 @@ def get_all_books_with_sections():
 
 
 def create_anonymous_author():
+    """add an author Anonymous to db; applied if one is not present"""
     author = Author(
         name='Anonymous',
         description='Sometimes the authorship is not certain.')
     db.session.add(author)
+    Stats.query\
+        .filter(Stats.entity_name ==
+                constants_for_stats_dict['AUTHORS_NUMBER'])\
+        .update({Stats.count: Stats.count + 1}, synchronize_session=False)
     db.session.commit()
     return author
 
@@ -207,6 +224,9 @@ def add_book(form, user_id):
         new_book.authors.extend(authors_lst)
     new_book.user = User.query.get_or_404(user_id)
 
+    Stats.query\
+        .filter(Stats.entity_name == constants_for_stats_dict['BOOKS_NUMBER'])\
+        .update({Stats.count: Stats.count + 1}, synchronize_session=False)
     db.session.add(new_book)
     db.session.commit()
 
@@ -232,6 +252,7 @@ def update_book(book_id, form):
 
 
 def add_author(form, user_id):
+    """Adds an author and creates new books if they're present in the form"""
     new_author = Author()
     new_author.name = form.first_name.data
     if form.last_name.data:
@@ -253,6 +274,15 @@ def add_author(form, user_id):
     db.session.flush()
     new_author.book_count = Author.book_count + len(new_author.books)
     new_author.user = User.query.get_or_404(user_id)
+    Stats.query\
+        .filter(Stats.entity_name ==
+                constants_for_stats_dict['AUTHORS_NUMBER'])\
+        .update({Stats.count: Stats.count + 1}, synchronize_session=False)
+    Stats.query\
+        .filter(Stats.entity_name ==
+                constants_for_stats_dict['BOOKS_NUMBER'])\
+        .update({Stats.count: Stats.count + len(new_author.books)},
+                synchronize_session=False)
 
     db.session.commit()
 
@@ -300,7 +330,7 @@ def update_comment(comment_id, comment_type, form):
         return False
 
 
-# FORM VALIDATION HELPERS
+# Form validation helpers
 def check_if_author_exists(author_ids):
     authors_count = db.session\
         .query(db.func.count(Author.id))\
@@ -317,12 +347,17 @@ def check_if_book_exists(book_ids):
     return len(book_ids) == books_count
 
 
-# SUGGESTIONS FUNCTIONS
+# Suggestions funcions
 def suggestions_initial(suggestion_type, initial_suggestions_number):
+    """Returns suggestions dict with the initial authors/books list
+    for react-tagsinput"""
     suggestion_type = suggestion_type.lower()
 
     if suggestion_type == 'authors':
-        author_number = Author.query.count()
+        author_number = db.session.query(Stats.count)\
+            .filter(Stats.entity_name ==
+                    constants_for_stats_dict['AUTHORS_NUMBER'])\
+            .one()
 
         if author_number <= initial_suggestions_number:
             return {
@@ -336,13 +371,16 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
                 'suggestions': [a.surname + ' ' + a.name + ';' + str(a.id)
                                 if a.surname else a.name + ';' + str(a.id)
                                 for a in Author.query
-                                    .order_by(Author.book_count.desc())
-                                    .limit(initial_suggestions_number)
-                                    .all()],
+                                .order_by(Author.book_count.desc())
+                                .limit(initial_suggestions_number)
+                                .all()],
                 'finished': False
             }
     elif suggestion_type == 'books':
-        book_number = Book.query.count()
+        book_number = db.session.query(Stats.count)\
+            .filter(Stats.entity_name ==
+                    constants_for_stats_dict['BOOKS_NUMBER'])\
+            .one()
         if book_number <= initial_suggestions_number:
             return {
                 'suggestions': [b.title + ';' + str(b.id)
@@ -353,13 +391,17 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
             return {
                 'suggestions': [b.title + ';' + str(b.id)
                                 for b in Book.query
-                                .order_by(Book.title)
+                                .order_by(db.func.ts_rank(
+                                    Book.title_tsvector, ''))
                                 .limit(initial_suggestions_number).all()],
                 'finished': False
             }
 
 
 def get_suggestions(query, suggestion_type, limited_number, amount=None):
+    """returns suggestions dict for react-tagsinput;
+    invoked if there are any books/authors left
+    upon using initial_suggestions()"""
     suggestion_type = suggestion_type.lower()
 
     if suggestion_type == 'authors':
@@ -449,8 +491,7 @@ def get_all_author_comments_by_author_id(
                     'created_at': c.created_at,
                     'edited': c.edited,
                     'username': c.user.username,
-                    'liked': False,
-                    'disliked': False,
+                    'user_reaction': 'neutral',
                     'current_user_wrote': False
                 }
                 for c in comments_list],
@@ -459,24 +500,31 @@ def get_all_author_comments_by_author_id(
         }
     else:
         user = User.query.get(user_id)
+
         comments_dict = {
-            'comments': [
-                {
-                    'id': c.id,
-                    'topic': c.topic,
-                    'text': c.text,
-                    'rating': c.rating,
-                    'created_at': c.created_at,
-                    'edited': c.edited,
-                    'username': c.user.username,
-                    'liked': c in user.author_comments_likes,
-                    'disliked': c in user.author_comments_dislikes,
-                    'current_user_wrote': c.user is user
-                }
-                for c in comments_list],
+            'comments': [],
             'chunk': chunk,
             'comments_left': comments_left
         }
+
+        for c in comments_list:
+            user_reaction = 'neutral'
+            if c in user.author_comments_likes:
+                user_reaction = 'liked'
+            elif c in user.author_comments_dislikes:
+                user_reaction = 'disliked'
+
+            comments_dict['comments'].append({
+                'id': c.id,
+                'topic': c.topic,
+                'text': c.text,
+                'rating': c.rating,
+                'created_at': c.created_at,
+                'edited': c.edited,
+                'username': c.user.username,
+                'user_reaction': user_reaction,
+                'current_user_wrote': c.user is user
+            })
 
     return comments_dict
 
@@ -516,8 +564,7 @@ def get_all_book_comments_by_book_id(
                     'created_at': c.created_at,
                     'edited': c.edited,
                     'username': c.user.username,
-                    'liked': False,
-                    'disliked': False,
+                    'user_reaction': 'neutral',
                     'current_user_wrote': False
                 }
                 for c in comments_list],
@@ -527,23 +574,29 @@ def get_all_book_comments_by_book_id(
     else:
         user = User.query.get(user_id)
         comments_dict = {
-            'comments': [
-                {
-                    'id': c.id,
-                    'topic': c.topic,
-                    'text': c.text,
-                    'rating': c.rating,
-                    'created_at': c.created_at,
-                    'edited': c.edited,
-                    'username': c.user.username,
-                    'liked': c in user.book_comments_likes,
-                    'disliked': c in user.book_comments_dislikes,
-                    'current_user_wrote': c.user is user
-                }
-                for c in comments_list],
+            'comments': [],
             'chunk': chunk,
             'comments_left': comments_left
         }
+
+        for c in comments_list:
+            user_reaction = 'neutral'
+            if c in user.book_comments_likes:
+                user_reaction = 'liked'
+            elif c in user.book_comments_dislikes:
+                user_reaction = 'disliked'
+
+            comments_dict['comments'].append({
+                'id': c.id,
+                'topic': c.topic,
+                'text': c.text,
+                'rating': c.rating,
+                'created_at': c.created_at,
+                'edited': c.edited,
+                'username': c.user.username,
+                'user_reaction': user_reaction,
+                'current_user_wrote': c.user is user
+            })
 
     return comments_dict
 
@@ -585,6 +638,9 @@ def add_comment(form, user_id, comment_type, entity_id):
 
 
 def react_to_comment(attitude, comment_type, comment_id, user_id):
+    """Invokes 2 private functions: _like_comment, _dislike_comment;
+    changes the comments's rating, adds or removes the user from its
+    users_liked or user_disliked propertties"""
     attitude = attitude.lower()
     comment_type = comment_type.lower()
 
@@ -619,8 +675,17 @@ def delete_book_or_author(entity_type, entity_id):
 
     if entity_type == 'authors':
         entity_to_delete = Author.query.get(entity_id)
+        Stats.query\
+            .filter(Stats.entity_name ==
+                    constants_for_stats_dict['AUTHORS_NUMBER'])\
+            .update({Stats.count: Stats.count - 1}, synchronize_session=False)
     elif entity_type == 'books':
         entity_to_delete = Book.query.get(entity_id)
+        Stats.query\
+            .filter(
+                Stats.entity_name ==
+                constants_for_stats_dict['BOOKS_NUMBER'])\
+            .update({Stats.count: Stats.count - 1}, synchronize_session=False)
 
     if entity_to_delete:
         db.session.delete(entity_to_delete)
