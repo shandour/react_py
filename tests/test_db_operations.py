@@ -41,9 +41,10 @@ class TestDbOperations(TestCase):
             'db': None,
             'Author': None,
             'Book': None,
-            'AuthorComment':None,
+            'AuthorComment': None,
             'BookComment': None,
             'User': None,
+            'Stats': None,
             'EditAuthorForm': None,
             'AddAuthorForm': None,
             'EditAuthorForm': None,
@@ -292,9 +293,8 @@ class TestDbOperations(TestCase):
         self.mocks['db'].session.query().filter().scalar.assert_called_once()
         self.assertEqual(r, False)
 
-    def test_suggestions_initial_returns_dicts(self):
-        # authors
-        self.mocks['Author'].query.count\
+    def test_suggestions_initial_returns_authors_dict(self):
+        self.mocks['db'].session.query().filter().one\
             .return_value = self.app.config['INITIAL_SUGGESTIONS_NUMBER'] - 1
         a1 = self.mocks['Author']()
         a1.surname = 'sn'
@@ -306,15 +306,15 @@ class TestDbOperations(TestCase):
         r = suggestions_initial(
             'authors',
             self.app.config['INITIAL_SUGGESTIONS_NUMBER'])
-        self.mocks['Author'].query.count.assert_called_once_with()
+        self.mocks['db'].session.query().filter().one.assert_called_once_with()
         self.mocks['Author'].query.all.assert_called_once()
         self.assertEqual(r, {
             'suggestions': ['sn nm;9'],
             'finished': True
         })
 
-        # books
-        self.mocks['Book'].query.count\
+    def test_suggestions_initial_returns_books_dict(self):
+        self.mocks['db'].session.query().filter().one\
             .return_value = self.app.config['INITIAL_SUGGESTIONS_NUMBER'] + 1
         b1 = self.mocks['Book']()
         b1.title = 'tl'
@@ -325,14 +325,11 @@ class TestDbOperations(TestCase):
         r = suggestions_initial(
             'books',
             self.app.config['INITIAL_SUGGESTIONS_NUMBER'])
-        self.mocks['Book'].query.count.assert_called_once_with()
-        self.mocks['Book'].query.order_by.assert_called_with(
-            self.mocks['Book'].title
-        )
+        self.mocks['db'].func.ts_rank.assert_called_once()
         self.mocks['Book'].query.order_by().limit.assert_called_with(
             self.app.config['INITIAL_SUGGESTIONS_NUMBER']
         )
-        self.mocks['Book'].query.order_by().limit().all.assert_called_once()
+        self.mocks['Book'].query.order_by().limit().all.assert_called()
         self.assertEqual(r, {
             'suggestions': ['tl;12'],
             'finished': False
