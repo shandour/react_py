@@ -464,6 +464,8 @@ def get_all_author_comments_by_author_id(
     comments_query = (AuthorComment.query
                       .filter(AuthorComment.author_id == author_id)
                       .order_by(AuthorComment.edited.desc()))
+
+    highlighted_comment = None
     if comment_idx_to_highlight:
         highlighted_comment = AuthorComment.query.get(comment_idx_to_highlight)
 
@@ -541,6 +543,8 @@ def get_all_book_comments_by_book_id(
     comments_query = (BookComment.query
                       .filter(BookComment.book_id == book_id)
                       .order_by(BookComment.edited.desc()))
+
+    highlighted_comment = None
     if comment_idx_to_highlight:
         highlighted_comment = BookComment.query.get(comment_idx_to_highlight)
 
