@@ -458,16 +458,18 @@ def get_all_author_comments_by_author_id(
         comments_per_chunk,
         user_id=None,
         chunk=1,
-        comment_to_highlight=None):
+        comment_idx_to_highlight=None):
 
     comments_per_chunk = comments_per_chunk
     comments_query = (AuthorComment.query
                       .filter(AuthorComment.author_id == author_id)
                       .order_by(AuthorComment.edited.desc()))
-    if comment_to_highlight:
+    if comment_idx_to_highlight:
+        highlighted_comment = AuthorComment.query.get(comment_idx_to_highlight)
+
+    if highlighted_comment and highlighted_comment.author_id == author_id:
         comments_list = comments_query.all()
-        comment_index = comments_list.index(
-            AuthorComment.query.get(comment_to_highlight))
+        comment_index = comments_list.index(highlighted_comment)
         comments_list = comments_list[:comment_index+comments_per_chunk]
         if comment_index > comments_per_chunk:
             chunk = comment_index / comments_per_chunk + 1
@@ -533,16 +535,18 @@ def get_all_book_comments_by_book_id(
         comments_per_chunk,
         user_id=None,
         chunk=1,
-        comment_to_highlight=None):
+        comment_idx_to_highlight=None):
 
     comments_per_chunk = comments_per_chunk
     comments_query = (BookComment.query
                       .filter(BookComment.book_id == book_id)
                       .order_by(BookComment.edited.desc()))
-    if comment_to_highlight:
+    if comment_idx_to_highlight:
+        highlighted_comment = BookComment.query.get(comment_idx_to_highlight)
+
+    if highlighted_comment and highlighted_comment.book_id == book_id:
         comments_list = comments_query.all()
-        comment_index = comments_list.index(
-            BookComment.query.get(comment_to_highlight))
+        comment_index = comments_list.index(highlighted_comment)
         comments_list = comments_list[:comment_index+comments_per_chunk]
         if comment_index > comments_per_chunk:
             chunk = comment_index / comments_per_chunk + 1
