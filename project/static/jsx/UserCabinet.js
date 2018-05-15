@@ -67,7 +67,7 @@ class UserCabinet extends React.Component {
     }
 
     componentDidMount() {
-        let req = new Request(`/api/get-user-comments?sortOption=most-popular&sortDirection=desc&commentsType=authors&page=1&initial=True`, {credentials: "same-origin"});
+        let req = new Request("/api/users/current/comments?sortOption=most-popular&sortDirection=desc&commentsType=authors&page=1&initial=True", {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (!resp.ok) {
                 this.setState({warning: 'You have no permission to view this.'});
@@ -100,7 +100,7 @@ class UserCabinet extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        const req = new Request('/api/change-password',
+        const req = new Request(`/api/users/${this.state.user.id}`,
                                 {method: 'PUT',
                                  credentials: 'same-origin',
                                  headers: myHeaders,
@@ -143,7 +143,7 @@ class UserCabinet extends React.Component {
         const sortOption = commentsDisplay.sortOption;
         const sortDirection = commentsDisplay.sortDirection;
         const currentPage = commentsDisplay.activePage;
-        const req = new Request(`/api/get-user-comments?sortOption=${sortOption}&sortDirection=${sortDirection}&commentsType=${commentsType}&page=${currentPage}`, {credentials: 'same-origin'});
+        const req = new Request(`/api/users/current/comments?sortOption=${sortOption}&sortDirection=${sortDirection}&commentsType=${commentsType}&page=${currentPage}`, {credentials: 'same-origin'});
 
         fetch(req).then(resp => {
             if (!resp.ok) {

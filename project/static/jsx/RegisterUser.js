@@ -57,7 +57,7 @@ class RegisterUser extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        const req = new Request('/api/register',
+        const req = new Request('/api/users',
                                 {method: 'POST',
                                  credentials: 'same-origin',
                                  headers: myHeaders,

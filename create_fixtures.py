@@ -11,8 +11,7 @@ from project.models import (
     AuthorComment,
     BookComment,
     User,
-    Stats,
-    constants_for_stats_dict
+    Stats
 )
 
 
@@ -69,12 +68,10 @@ def create_fixtures(
         creation_iteration_number -= 1
 
     Stats.query\
-        .filter(Stats.entity_name ==
-                constants_for_stats_dict['AUTHORS_NUMBER'])\
+        .filter(Stats.entity_name == Stats.AUTHORS_NUMBER)\
         .update({Stats.count: len(object_list)})
     Stats.query\
-        .filter(Stats.entity_name ==
-                constants_for_stats_dict['BOOKS_NUMBER'])\
+        .filter(Stats.entity_name == Stats.BOOKS_NUMBER)\
         .update({Stats.count: all_books_count})
 
     db.session.add_all(object_list)

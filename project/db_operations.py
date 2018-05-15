@@ -10,8 +10,7 @@ from project.models import (
     BookComment,
     User,
     Stats,
-    db,
-    constants_for_stats_dict
+    db
 )
 
 
@@ -105,7 +104,7 @@ def get_user_by_id(sort_dict, max_comments_per_page, user_id=None):
     }
 
 
-def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
+def sort_user_comments(sort_dict, max_comments_per_page, user_id):
     """Return comments that a user made,
     sorted according to sort option in a given sort direction,
     paginated"""
@@ -113,9 +112,8 @@ def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
     comments_type = (AuthorComment
                      if sort_dict['comments_type'] == 'authors'
                      else BookComment)
-    comments_query = (comments_type
-                      .query
-                      .filter(comments_type.user_id == user_id))
+    comments_query = comments_type.query\
+        .filter(comments_type.user_id == user_id)
 
     if sort_dict['sort_option'] == 'most-popular':
         sort_query = (comments_type.rating.asc()
@@ -140,12 +138,12 @@ def sort_user_comments(sort_dict, max_comments_per_page, user_id=None):
         sort_query = (comments_type.edited.asc()
                       if sort_dict['sort_direction'] == 'asc'
                       else comments_type.edited.desc())
-    comments_pagination = (comments_query
-                           .order_by(sort_query)
-                           .paginate(
-                               page=int(sort_dict['page']),
-                               per_page=comments_per_page,
-                               error_out=False))
+    comments_pagination = comments_query\
+        .order_by(sort_query)\
+        .paginate(
+            page=int(sort_dict['page']),
+            per_page=comments_per_page,
+            error_out=False)
 
     return {
         'comments': [
@@ -194,8 +192,7 @@ def create_anonymous_author():
         description='Sometimes the authorship is not certain.')
     db.session.add(author)
     Stats.query\
-        .filter(Stats.entity_name ==
-                constants_for_stats_dict['AUTHORS_NUMBER'])\
+        .filter(Stats.entity_name == Stats.AUTHORS_NUMBER)\
         .update({Stats.count: Stats.count + 1}, synchronize_session=False)
     db.session.commit()
     return author
@@ -225,7 +222,7 @@ def add_book(form, user_id):
     new_book.user = User.query.get_or_404(user_id)
 
     Stats.query\
-        .filter(Stats.entity_name == constants_for_stats_dict['BOOKS_NUMBER'])\
+        .filter(Stats.entity_name == Stats.BOOKS_NUMBER)\
         .update({Stats.count: Stats.count + 1}, synchronize_session=False)
     db.session.add(new_book)
     db.session.commit()
@@ -275,12 +272,10 @@ def add_author(form, user_id):
     new_author.book_count = Author.book_count + len(new_author.books)
     new_author.user = User.query.get_or_404(user_id)
     Stats.query\
-        .filter(Stats.entity_name ==
-                constants_for_stats_dict['AUTHORS_NUMBER'])\
+        .filter(Stats.entity_name == Stats.AUTHORS_NUMBER)\
         .update({Stats.count: Stats.count + 1}, synchronize_session=False)
     Stats.query\
-        .filter(Stats.entity_name ==
-                constants_for_stats_dict['BOOKS_NUMBER'])\
+        .filter(Stats.entity_name == Stats.BOOKS_NUMBER)\
         .update({Stats.count: Stats.count + len(new_author.books)},
                 synchronize_session=False)
 
@@ -355,8 +350,7 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
 
     if suggestion_type == 'authors':
         author_number = db.session.query(Stats.count)\
-            .filter(Stats.entity_name ==
-                    constants_for_stats_dict['AUTHORS_NUMBER'])\
+            .filter(Stats.entity_name == Stats.AUTHORS_NUMBER)\
             .one()
 
         if author_number <= initial_suggestions_number:
@@ -378,8 +372,7 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
             }
     elif suggestion_type == 'books':
         book_number = db.session.query(Stats.count)\
-            .filter(Stats.entity_name ==
-                    constants_for_stats_dict['BOOKS_NUMBER'])\
+            .filter(Stats.entity_name == Stats.BOOKS_NUMBER)\
             .one()
         if book_number <= initial_suggestions_number:
             return {
@@ -391,7 +384,7 @@ def suggestions_initial(suggestion_type, initial_suggestions_number):
             return {
                 'suggestions': [b.title + ';' + str(b.id)
                                 for b in Book.query
-                                .order_by(Book.title.desc())
+                                .order_by(Book.title)
                                 .limit(initial_suggestions_number).all()],
                 'finished': False
             }
@@ -458,16 +451,16 @@ def get_all_author_comments_by_author_id(
         comments_per_chunk,
         user_id=None,
         chunk=1,
-        comment_idx_to_highlight=None):
+        comment_id_to_highlight=None):
 
     comments_per_chunk = comments_per_chunk
-    comments_query = (AuthorComment.query
-                      .filter(AuthorComment.author_id == author_id)
-                      .order_by(AuthorComment.edited.desc()))
+    comments_query = AuthorComment.query\
+        .filter(AuthorComment.author_id == author_id)\
+        .order_by(AuthorComment.created_at.desc())
 
     highlighted_comment = None
-    if comment_idx_to_highlight:
-        highlighted_comment = AuthorComment.query.get(comment_idx_to_highlight)
+    if comment_id_to_highlight:
+        highlighted_comment = AuthorComment.query.get(comment_id_to_highlight)
 
     if highlighted_comment and highlighted_comment.author_id == author_id:
         comments_list = comments_query.all()
@@ -537,16 +530,16 @@ def get_all_book_comments_by_book_id(
         comments_per_chunk,
         user_id=None,
         chunk=1,
-        comment_idx_to_highlight=None):
+        comment_id_to_highlight=None):
 
     comments_per_chunk = comments_per_chunk
-    comments_query = (BookComment.query
-                      .filter(BookComment.book_id == book_id)
-                      .order_by(BookComment.edited.desc()))
+    comments_query = BookComment.query\
+        .filter(BookComment.book_id == book_id)\
+        .order_by(BookComment.created_at.desc())
 
     highlighted_comment = None
-    if comment_idx_to_highlight:
-        highlighted_comment = BookComment.query.get(comment_idx_to_highlight)
+    if comment_id_to_highlight:
+        highlighted_comment = BookComment.query.get(comment_id_to_highlight)
 
     if highlighted_comment and highlighted_comment.book_id == book_id:
         comments_list = comments_query.all()
@@ -608,14 +601,14 @@ def get_all_book_comments_by_book_id(
     return comments_dict
 
 
-def add_comment(form, user_id, comment_type, entity_id):
+def add_comment(form, user_id, entity_type, entity_id):
     comment = None
-    comment_type = comment_type.lower()
+    entity_type = entity_type.lower()
 
-    if comment_type == 'author':
+    if entity_type == 'authors':
         comment = AuthorComment()
         comment.author = Author.query.get(entity_id)
-    elif comment_type == 'book':
+    elif entity_type == 'books':
         comment = BookComment()
         comment.book = Book.query.get(entity_id)
 
@@ -683,15 +676,12 @@ def delete_book_or_author(entity_type, entity_id):
     if entity_type == 'authors':
         entity_to_delete = Author.query.get(entity_id)
         Stats.query\
-            .filter(Stats.entity_name ==
-                    constants_for_stats_dict['AUTHORS_NUMBER'])\
+            .filter(Stats.entity_name == Stats.AUTHORS_NUMBER)\
             .update({Stats.count: Stats.count - 1}, synchronize_session=False)
     elif entity_type == 'books':
         entity_to_delete = Book.query.get(entity_id)
         Stats.query\
-            .filter(
-                Stats.entity_name ==
-                constants_for_stats_dict['BOOKS_NUMBER'])\
+            .filter(Stats.entity_name == Stats.BOOKS_NUMBER)\
             .update({Stats.count: Stats.count - 1}, synchronize_session=False)
 
     if entity_to_delete:
@@ -702,20 +692,20 @@ def delete_book_or_author(entity_type, entity_id):
 def check_if_user_wrote_comment(user_id, comment_id, comment_type):
     comment_type = comment_type.lower()
 
-    if comment_type not in ['author', 'book']:
+    if comment_type not in ['authors', 'books']:
         return False
 
     return (
         user_id == AuthorComment.query.get(comment_id).user_id
-        if comment_type == 'author'
+        if comment_type == 'authors'
         else user_id == BookComment.query.get(comment_id).user_id)
 
 
 def check_if_user_can_edit_entity(entity_type, entity_id, user_id):
-    if entity_type == 'author':
+    if entity_type == 'authors':
         author = Author.query.get_or_404(entity_id)
         return author.user_id == user_id
-    elif entity_type == 'book':
+    elif entity_type == 'books':
         book = Book.query.get_or_404(entity_id)
         return book.user_id == user_id
 

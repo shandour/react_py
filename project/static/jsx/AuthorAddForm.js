@@ -92,7 +92,7 @@ class AuthorAddForm extends React.Component {
                        body: new URLSearchParams(bodyObj),
                        headers: myHeaders,
                        credentials: "same-origin"};
-        let req = new Request('/api/authors/add', options);
+        let req = new Request('/api/authors', options);
         fetch(req).then(resp => {
             if (resp.status == 201) {
                 this.setState({submitSuccessful: true});

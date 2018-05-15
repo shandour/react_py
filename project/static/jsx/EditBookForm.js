@@ -44,7 +44,7 @@ class EditBookForm extends React.Component {
     }
 
     componentDidMount () {
-        const req = new Request(`/api/can-user-edit-entity?entity=book&id=${this.props.match.params.bookId}`,
+        const req = new Request(`/api/books/${this.props.match.params.bookId}/can-be-edited`,
                                 {credentials: 'same-origin'});
         fetch(req).then(resp => {
             if (resp.status == '403') {

@@ -7,9 +7,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import column_property
 
 
-constants_for_stats_dict = {'AUTHORS_NUMBER': 'authors',
-                            'BOOKS_NUMBER': 'books'}
-
 db = SQLAlchemy()
 
 authors_books = db.Table(
@@ -22,6 +19,9 @@ authors_books = db.Table(
 
 class Stats(db.Model):
     __tablename__ = 'stats'
+
+    AUTHORS_NUMBER = 'authors'
+    BOOKS_NUMBER = 'books'
 
     entity_name = db.Column(db.String(200), primary_key=True)
     count = db.Column(db.Integer, default=0)

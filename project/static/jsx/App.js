@@ -81,7 +81,7 @@ class App extends React.Component {
     }
 
     handleLogin() {
-        let req = new Request('/api/is-logged-in/info', {credentials: "same-origin"});
+        let req = new Request('/api/users/current/info', {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (!resp.ok) {
                 this.setState({loggedIn: false});
@@ -99,7 +99,7 @@ class App extends React.Component {
     }
 
     componentDidMount() {
-        let req = new Request('/api/is-logged-in/info', {credentials: "same-origin"});
+        let req = new Request('/api/users/current/info', {credentials: "same-origin"});
         fetch(req).then(resp => {
             if (!resp.ok) {
                 this.setState({loggedIn: false, logInInfoLoaded: true});

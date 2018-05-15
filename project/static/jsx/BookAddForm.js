@@ -66,7 +66,6 @@ class BookAddForm extends React.Component {
         fetch(`/api/authors/suggestions?q=${query}&amount=${amount}`,
               {credentials: "same-origin"}).then(resp => resp.json()).then(data => {
                   const suggestions = amount == 0 ? data.suggestions : [...this.state.suggestions, ...data.suggestions];
-                  console.log(typeof suggestions)
                   if (query.length > 0) {
                       this.setState({
                           suggestions: suggestions,
@@ -161,14 +160,14 @@ class BookAddForm extends React.Component {
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
         let options = {method: 'POST', body: new URLSearchParams(bodyObj), headers: myHeaders, credentials: "same-origin"};
-        let req = new Request('/api/books/add', options);
+        let req = new Request('/api/books', options);
         fetch(req).then(resp =>{
             if (resp.status == 201) {
                 this.setState({submitSuccessful: true});
             } else if (!resp.ok) {
                 throw resp.status;
             } else {
-                resp.json();
+                return resp.json();
             }
         }).then(data => {
             this.setState({errors: data});

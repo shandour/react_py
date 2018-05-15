@@ -45,7 +45,7 @@ class EditAuthorForm extends React.Component {
     }
 
     componentDidMount () {
-        const req = new Request(`/api/can-user-edit-entity?entity=author&id=${this.props.match.params.authorId}`, {credentials: 'same-origin'});
+        const req = new Request(`/api/authors/${this.props.match.params.authorId}/can-be-edited`, {credentials: 'same-origin'});
         fetch(req).then(resp => {
             if (resp.status == '403') {
                 this.setState({unauthorizedWarning: true});
@@ -79,7 +79,7 @@ class EditAuthorForm extends React.Component {
                     });
                 });
             }
-        }).catch(err => {console.log('An error occured while fetching data from server')});;
+        }).catch(err => {console.log('An error occured while fetching data from server')});
     }
 
     loadMoreSuggestions() {

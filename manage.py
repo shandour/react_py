@@ -2,7 +2,7 @@
 import click
 
 from project import create_app
-from project.models import db, Role, Stats, constants_for_stats_dict
+from project.models import db, Role, Stats
 from project.security import ADMIN_ROLE, EDITOR_ROLE, user_datastore
 from create_fixtures import create_fixtures as cf
 
@@ -20,8 +20,8 @@ def create_db():
     db.session.add_all(
         [Role(name=ADMIN_ROLE, description='The site Deity'),
          Role(name=EDITOR_ROLE, description='Can add and edit items'),
-         Stats(entity_name=constants_for_stats_dict['AUTHORS_NUMBER']),
-         Stats(entity_name=constants_for_stats_dict['BOOKS_NUMBER'])])
+         Stats(entity_name=Stats.AUTHORS_NUMBER),
+         Stats(entity_name=Stats.BOOKS_NUMBER)])
     db.session.commit()
 
 
