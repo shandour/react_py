@@ -26,6 +26,10 @@ class Stats(db.Model):
     entity_name = db.Column(db.String(200), primary_key=True)
     count = db.Column(db.Integer, default=0)
 
+    def __repr__(self):
+        return ('<stats entity: {entity_name}, number of entities: {count}>')\
+            .format(entity_name=self.entity_name, count=self.count)
+
 
 class Author(db.Model):
     __tablename__ = 'authors'
@@ -49,8 +53,12 @@ class Author(db.Model):
                 ", description: '{description}...'>").format(
                     id=self.id,
                     name=self.name,
-                    surname=self.surname,
-                    description=self.description[:20])
+                    surname=self.surname
+                    if self.surname
+                    else '',
+                    description=self.description[:20]
+                    if self.description
+                    else '')
 
 
 class Book(db.Model):
@@ -68,7 +76,9 @@ class Book(db.Model):
         return ("<id={id}, title: {title}, description: '{description}"
                 ", text: '{text}...'>").format(
                     id=self.id, title=self.title,
-                    description=self.description[:20],
+                    description=self.description[:20]
+                    if self.description
+                    else '',
                     text=self.text[:25])
 
 
@@ -88,12 +98,22 @@ class BookComment(db.Model, CommentsMixIn):
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
+    def __repr__(self):
+        return ('<id={id}, topic: {topic}>, text: {text}>')\
+            .format(id=self.id, topic=self.topic if self.topic else '',
+                    text=self.text)
+
 
 class AuthorComment(db.Model, CommentsMixIn):
     __tablename__ = 'author_comments'
 
     author_id = db.Column(db.Integer, db.ForeignKey('authors.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def __repr__(self):
+        return ('<id={id}, topic: {topic}>, text: {text}>')\
+            .format(id=self.id, topic=self.topic if self.topic else '',
+                    text=self.text)
 
 
 author_comments_users_like = db.Table(
@@ -191,8 +211,7 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return ("<id={id}, username: {username}, email: {email}>").format(
-            id=self.id, username=self.username, email=self.email
-        )
+            id=self.id, username=self.username, email=self.email)
 
 
 class Role(db.Model, RoleMixin):
@@ -203,9 +222,11 @@ class Role(db.Model, RoleMixin):
     description = db.Column(db.String(200))
 
     def __repr__(self):
-        return ("<id={id}, name: {name}>, description: {description}").format(
-            id=self.id, name=self.name, description=self.description
-        )
+        return ("<id={id}, name: {name}>, description: {description}>").format(
+            id=self.id, name=self.name,
+            description=self.description
+            if self.description
+            else '')
 
 
 # INDICES
