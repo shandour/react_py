@@ -269,7 +269,6 @@ def comments(comment_type, entity_id):
 @api_bp.route('/<string:comment_type>/comments/<int:comment_id>/attitude',
               methods=['POST'])
 def attitude_on_comment(comment_type, comment_id):
-    #import ipdb; ipdb.set_trace()
     if not current_user.is_authenticated:
         abort(401)
     attitude = request.form.get('attitude')
