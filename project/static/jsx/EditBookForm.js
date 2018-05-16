@@ -67,7 +67,7 @@ class EditBookForm extends React.Component {
                         const fullName = typeof a.surname !== 'undefined'? `${a.surname} ${a.name}`: a.name;
                         author_tags.push({
                             id: a.id,
-                            name: fullName
+                            text: fullName
                         });
                     }
                     this.setState({book:book, author_tags:author_tags});
@@ -134,14 +134,9 @@ class EditBookForm extends React.Component {
         let tag_id = suggestions.filter(suggestion => suggestion.startsWith(tag))[0];
         tag_id = Number(tag_id.slice(tag_id.lastIndexOf(';') + 1));
 
-        let current_ids = tags.map(obj => obj.id);
-        if (current_ids.includes(tag_id)) {
-            return;
-        }
-
         tags.push({
             id: tag_id,
-            name: tag
+            text: tag
         });
         this.setState({author_tags: tags});
     }
@@ -278,7 +273,6 @@ class EditBookForm extends React.Component {
                 tags={author_tags}
                 minQueryLength={1}
                 suggestions={suggestions}
-                labelField={'name'}
                 handleDelete={this.handleDelete}
                 handleAddition={this.handleAddition}
                 handleFilterSuggestions={this.handleFilterSuggestions}

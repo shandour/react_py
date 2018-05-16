@@ -24,7 +24,7 @@ class BookAddForm extends React.Component {
                 description: '',
                 text: ''
             }, author_tags: [
-                {id: 'a', name: 'Anonymous'}
+                {id: 'a', text: 'Anonymous'}
             ], suggestions: ['Anonymous;a'],
             initialFinished: false,
             intermediateFinished: false,
@@ -101,7 +101,7 @@ class BookAddForm extends React.Component {
 
         tags.push({
             id: tag_id,
-            name: tag
+            text: tag
         });
         this.setState({author_tags: tags});
     }
@@ -222,7 +222,6 @@ class BookAddForm extends React.Component {
             tags={author_tags}
             minQueryLength={1}
             suggestions={suggestions}
-            labelField={'name'}
             handleDelete={this.handleDelete}
             handleAddition={this.handleAddition}
             handleFilterSuggestions={this.handleFilterSuggestions}

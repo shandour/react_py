@@ -3,7 +3,6 @@ from flask import (
     render_template,
     jsonify,
     request,
-    Response,
     after_this_request,
     abort
 )
@@ -79,7 +78,7 @@ def add_author():
 
     if form.validate_on_submit():
         add_one_author(form, current_user.id)
-        return Response(status='201')
+        return '', 201
     else:
         return jsonify(form.get_dict_errors())
 
@@ -92,7 +91,7 @@ def edit_author(author_id):
 
     if form.validate_on_submit():
         update_author(author_id, form)
-        return Response(status='204')
+        return '', 204
     else:
         return jsonify(form.errors)
 
@@ -115,7 +114,7 @@ def add_book():
 
     if form.validate_on_submit():
         add_one_book(form, current_user.id)
-        return Response(status='201')
+        return '', 201
     else:
         return jsonify(form.errors)
 
@@ -128,7 +127,7 @@ def edit_book(book_id):
 
     if form.validate_on_submit():
         update_book(book_id, form)
-        return Response(status='204')
+        return '', 204
     else:
         return jsonify(form.errors)
 
@@ -143,9 +142,9 @@ def can_user_edit_entity(entity_type, entity_id):
                 entity_type,
                 entity_id,
                 current_user.id):
-            return Response(status='200')
-        return Response(status='403')
-    return Response(status='200')
+            return '', 200
+        abort(403)
+    return '', 200
 
 
 # suggestions for author and book tags:
@@ -205,7 +204,7 @@ def delete_book_or_author_from_db(entity_type, entity_id):
             entity_id,
             current_user.id)):
         delete_book_or_author(entity_type, entity_id)
-        return Response(status='200')
+        return '', 200
     abort(403)
 
 
@@ -214,7 +213,7 @@ def delete_book_or_author_from_db(entity_type, entity_id):
 def is_user_logged_in():
     if not current_user.is_authenticated:
         abort(401)
-    return Response(status='200')
+    return '', 200
 
 
 @api_bp.route('/users/current/info')
@@ -222,7 +221,7 @@ def get_user_info():
     if not current_user.is_authenticated:
         abort(401)
 
-    return jsonify({'username': current_user.username}), 200
+    return jsonify({'username': current_user.username})
 
 
 # LOGOUT ASSISTANT
@@ -232,7 +231,7 @@ def logout_current_user():
         abort(401)
     else:
         logout_user()
-        return Response(status='200')
+        return '', 200
 
 
 # COMMENTS functionality
@@ -287,7 +286,7 @@ def delete_comment(comment_type, comment_id):
     if not check_user_identity(comment_id, comment_type):
         abort(403)
     delete_one_comment(comment_type, comment_id)
-    return Response(status='200')
+    return '', 200
 
 
 @api_bp.route('/<string:entity_type>/<int:entity_id>/comments',
@@ -334,7 +333,7 @@ def can_user_edit(comment_type, comment_id):
     if not check_user_identity(comment_id, comment_type):
         abort(403)
     else:
-        return Response(status='200')
+        return '', 200
 
 
 # check user identity: returns True if user is logged-in,
@@ -358,7 +357,7 @@ def login():
 
     if form.validate_on_submit():
         login_user(form.user, remember=form.remember.data)
-        return Response(status='202')
+        return '', 202
     else:
         return jsonify(form.errors), 401
 
@@ -371,24 +370,23 @@ def register():
     if form.validate_on_submit():
         user = register_user(**form.to_dict())
         login_user(user)
-        return Response(status='202')
+        return '', 202
     else:
         return jsonify(form.errors), 401
 
 
 # custom change password mechanism
-@api_bp.route('/users/<int:user_id>', methods=['PUT'])
-def change_password(user_id):
+@api_bp.route('/users/current', methods=['PUT'])
+def change_password():
     if not current_user.is_authenticated:
         abort(401)
-    if not current_user.id == user_id:
-        abort(403)
+
     form = ChangePasswordForm(request.form)
     if form.validate_on_submit():
         after_this_request(_commit)
         change_user_password(current_user._get_current_object(),
                              form.new_password.data)
-        return Response(status='202')
+        return '', 202
     else:
         return jsonify(form.errors), 401
 

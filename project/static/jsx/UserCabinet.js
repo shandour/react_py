@@ -100,7 +100,7 @@ class UserCabinet extends React.Component {
         bodyObj['csrf_token'] = window.csrf_token;
         let myHeaders = new Headers();
         myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-        const req = new Request(`/api/users/${this.state.user.id}`,
+        const req = new Request("/api/users/current",
                                 {method: 'PUT',
                                  credentials: 'same-origin',
                                  headers: myHeaders,

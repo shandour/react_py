@@ -66,7 +66,7 @@ class EditAuthorForm extends React.Component {
                     for (let b of data['books']) {
                         book_tags.push({
                             id: b[0],
-                            title: b[1]
+                            text: b[1]
                         });
                     }
                     this.setState({author:author, book_tags:book_tags});
@@ -134,14 +134,9 @@ class EditAuthorForm extends React.Component {
         let tag_id = suggestions.filter(suggestion => suggestion.startsWith(tag))[0];
         tag_id = Number(tag_id.slice(tag_id.lastIndexOf(';') + 1));
 
-        let current_ids = tags.map(obj => obj.id);
-        if (current_ids.includes(tag_id)) {
-            return;
-        }
-
         tags.push({
             id: tag_id,
-            title: tag
+            text: tag
         });
         this.setState({book_tags: tags});
     }
@@ -276,7 +271,6 @@ class EditAuthorForm extends React.Component {
                 tags={book_tags}
                 minQueryLength={1}
                 suggestions={suggestions}
-                labelField={'title'}
                 handleDelete={this.handleDelete}
                 handleAddition={this.handleAddition}
                 handleFilterSuggestions={this.handleFilterSuggestions}
