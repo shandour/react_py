@@ -715,7 +715,7 @@ def check_if_user_can_edit_entity(entity_type, entity_id, user_id):
 # private helper functions for react_to_comment
 def _like_comment(comment_type, comment_id, user_id):
     user = User.query.get(user_id)
-    comment_class = AuthorComment if comment_type == 'author' else BookComment
+    comment_class = AuthorComment if comment_type == 'authors' else BookComment
     comment = comment_class.query.get(comment_id)
     post_modification_dct = {}
 
@@ -741,7 +741,7 @@ def _like_comment(comment_type, comment_id, user_id):
 
 def _dislike_comment(comment_type, comment_id, user_id):
     user = User.query.get(user_id)
-    comment_class = AuthorComment if comment_type == 'author' else BookComment
+    comment_class = AuthorComment if comment_type == 'authors' else BookComment
     comment = comment_class.query.get(comment_id)
     post_modification_dct = {}
 

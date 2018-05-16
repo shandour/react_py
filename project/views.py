@@ -238,7 +238,7 @@ def logout_current_user():
 @api_bp.route('/<string:comment_type>/<int:entity_id>/comments')
 def comments(comment_type, entity_id):
     if comment_type not in ['authors', 'books']:
-        return
+        abort(400)
     comments_per_chunk = app.config['COMMENTS_PER_CHUNK']
     comments = {}
     chunk = request.args.get('chunk')
@@ -266,9 +266,10 @@ def comments(comment_type, entity_id):
 
 
 # like, dislike or revert to neutral
-@api_bp.route('/<string:comment_type>/comments/<string:comment_id>/attitude',
+@api_bp.route('/<string:comment_type>/comments/<int:comment_id>/attitude',
               methods=['POST'])
 def attitude_on_comment(comment_type, comment_id):
+    #import ipdb; ipdb.set_trace()
     if not current_user.is_authenticated:
         abort(401)
     attitude = request.form.get('attitude')

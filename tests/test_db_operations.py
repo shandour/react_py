@@ -432,7 +432,7 @@ class TestDbOperations(TestCase):
         self.mocks['AuthorComment'].query\
             .filter()\
             .order_by.assert_called_with(
-            self.mocks['AuthorComment'].edited.desc()
+            self.mocks['AuthorComment'].created_at.desc()
         )
         self.mocks['AuthorComment'].query\
             .filter()\
@@ -500,7 +500,7 @@ class TestDbOperations(TestCase):
         self.mocks['BookComment'].query\
             .filter()\
             .order_by.assert_called_with(
-            self.mocks['BookComment'].edited.desc()
+            self.mocks['BookComment'].created_at.desc()
         )
         self.mocks['BookComment'].query\
             .filter()\
@@ -538,7 +538,7 @@ class TestDbOperations(TestCase):
         r = add_comment(
             form,
             5,
-            'author',
+            'authors',
             2
         )
         self.mocks['Author'].query.get.assert_called_once_with(2)
@@ -568,7 +568,7 @@ class TestDbOperations(TestCase):
         r = add_comment(
             form,
             2,
-            'book',
+            'books',
             5
         )
         self.mocks['Book'].query.get.assert_called_once_with(5)
@@ -593,12 +593,11 @@ class TestDbOperations(TestCase):
     def test_react_to_comment_returns_liked_author_comment_dict(self):
         r = react_to_comment(
             'like',
-            'author',
+            'authors',
             1,
             2
         )
         self.mocks['User'].query.get.assert_called_once_with(2)
-        self.mocks['AuthorComment'].query.get.assert_called_once_with(1)
         self.mocks['db'].session.commit.assert_called_once()
         self.assertEqual(r, {
             'user_reaction': 'liked',
@@ -648,12 +647,12 @@ class TestDbOperations(TestCase):
 
     def test_check_if_user_wrote_comment_returns_True(self):
         self.mocks['AuthorComment'].query.get().user_id = 1
-        r = check_if_user_wrote_comment(1, 2, 'author')
+        r = check_if_user_wrote_comment(1, 2, 'authors')
         self.mocks['AuthorComment'].query.get.assert_called_with(2)
         self.assertEqual(r, True)
 
     def test_check_if_user_can_edit_entity_returns_False(self):
         self.mocks['Book'].query.get_or_404().user_id = 90922
-        r = check_if_user_can_edit_entity('book', 22, 3)
+        r = check_if_user_can_edit_entity('books', 22, 3)
         self.mocks['Book'].query.get_or_404.assert_called_with(22)
         self.assertEqual(r, False)
